@@ -1,0 +1,31 @@
+Source: displaymanager
+Section: utils
+Priority: optional
+Maintainer: Ante Karamatic <ivoks@ubuntu.com>
+Build-Depends: debhelper-compat (= 13), dh-python, python3:any
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+
+Package: displaymanager
+Architecture: all
+Depends: ${misc:Depends}, ${python3:Depends},
+         ddcutil (>= 2.0),
+         python3-gi,
+         gir1.2-gtk-4.0,
+         gir1.2-adw-1 (>= 1.6)
+Recommends: gnome-settings-daemon
+Conflicts: dell-display-manager
+Replaces: dell-display-manager
+Description: switch inputs, Picture-by-Picture and KVM on Dell monitors
+ A GTK 4 / libadwaita application and command line tool that controls Dell
+ monitors over DDC/CI, providing on GNOME what Dell Display and Peripheral
+ Manager provides on macOS and Windows:
+ .
+  * select the active video input
+  * turn Picture-by-Picture on or off, swap sides, choose the right input
+  * hand the monitor's built-in KVM (USB hub with keyboard and mouse)
+    to the other computer
+  * optional system-wide GNOME keyboard shortcuts for all of the above
+ .
+ Developed and tested on the Dell U4025QW; vendor VCP codes are
+ configurable for other models.

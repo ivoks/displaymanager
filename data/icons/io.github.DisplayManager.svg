@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later
+     Copyright (C) 2026 Ante Karamatic
+     Original artwork for DisplayManager. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="left" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#62a0ea"/>
+      <stop offset="1" stop-color="#3584e4"/>
+    </linearGradient>
+    <linearGradient id="right" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8ff0a4"/>
+      <stop offset="1" stop-color="#33d17a"/>
+    </linearGradient>
+  </defs>
+  <!-- stand -->
+  <path d="M52 92h24l4 18H48z" fill="#9a9996"/>
+  <rect x="36" y="108" width="56" height="8" rx="4" fill="#77767b"/>
+  <!-- bezel (slightly curved ultrawide) -->
+  <path d="M10 26q54-10 108 0v62q-54 8-108 0z" fill="#3d3846"/>
+  <path d="M10 85q54 8 108 0v3q-54 8-108 0z" fill="#241f31"/>
+  <!-- two panes -->
+  <path d="M16 31q23-4 46-5v58q-23-1-46-4z" fill="url(#left)"/>
+  <path d="M66 26q23 1 46 5v49q-23 3-46 4z" fill="url(#right)"/>
+  <!-- switch arrows -->
+  <g fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M38 48h52"/>
+    <path d="M80 39l10 9-10 9"/>
+    <path d="M90 66H38"/>
+    <path d="M48 57l-10 9 10 9"/>
+  </g>
+</svg>

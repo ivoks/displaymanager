@@ -1,0 +1,5 @@
+ddm/*.py usr/share/displaymanager/ddm
+displaymanager usr/share/displaymanager
+data/io.github.DisplayManager.desktop usr/share/applications
+data/icons/io.github.DisplayManager.svg usr/share/icons/hicolor/scalable/apps
+data/icons/io.github.DisplayManager-symbolic.svg usr/share/icons/hicolor/symbolic/apps

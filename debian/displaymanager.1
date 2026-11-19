@@ -1,0 +1,52 @@
+.TH DISPLAYMANAGER 1 "November 2026" "0.1.0" "User Commands"
+.SH NAME
+displaymanager \- control inputs, Picture-by-Picture and KVM on Dell monitors
+.SH SYNOPSIS
+.B displaymanager
+.br
+.B displaymanager
+[\fB\-q\fR] \fICOMMAND\fR [\fIARGS\fR]
+.SH DESCRIPTION
+Without arguments, opens the graphical application. With a command, performs
+the action over DDC/CI using \fBddcutil\fR(1) and exits; this is what the
+optional GNOME keyboard shortcuts call.
+.SH COMMANDS
+.TP
+.B status
+Show monitor, inputs, PBP and KVM state.
+.TP
+.B switch
+In Picture-by-Picture mode move keyboard and mouse to the other computer;
+otherwise switch the full-screen input between this and the other computer.
+.TP
+.BR "usb " [ here | away | toggle ]
+Move the monitor's USB hub (KVM).
+.TP
+.BR "pbp on" | off | toggle
+Control Picture-by-Picture.
+.TP
+.B swap
+Swap the left and right Picture-by-Picture sides.
+.TP
+.BI "input " CODE
+Select the (left) input by hex VCP code, e.g. 0x0f.
+.TP
+.BI "right " CODE
+Select the Picture-by-Picture right-side input.
+.TP
+.B inputs
+List the inputs reported by the monitor.
+.SH OPTIONS
+.TP
+.BR \-q ", " \-\-quiet
+Do not show a desktop notification.
+.SH FILES
+.TP
+.I ~/.config/displaymanager/config.json
+Settings, input names and overridable vendor VCP codes.
+.SH NOTES
+The user needs read/write access to the monitor's /dev/i2c-* device. The
+ddcutil package grants this to the user logged in at the local desktop;
+otherwise add the user to the \fBi2c\fR group.
+.SH SEE ALSO
+.BR ddcutil (1)

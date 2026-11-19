@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=DisplayManager
+Comment=Switch inputs, Picture-by-Picture and KVM on Dell monitors
+Exec=displaymanager
+Icon=io.github.DisplayManager
+Terminal=false
+Categories=Settings;HardwareSettings;GTK;
+Keywords=monitor;kvm;pbp;ddc;input;dell;
+StartupNotify=true

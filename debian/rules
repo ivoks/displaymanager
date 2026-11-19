@@ -1,0 +1,17 @@
+#!/usr/bin/make -f
+
+export PYBUILD_NAME=displaymanager
+
+%:
+	dh $@ --with python3
+
+# Plain Python application without setup.py/pyproject: nothing to build.
+override_dh_auto_build:
+override_dh_auto_install:
+override_dh_auto_test:
+
+override_dh_auto_clean:
+	find . -name __pycache__ -type d -prune -exec rm -rf {} +
+
+override_dh_python3:
+	dh_python3 /usr/share/displaymanager

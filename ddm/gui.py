@@ -1,0 +1,413 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Ante Karamatic
+"""GTK4 / libadwaita front end."""
+
+from __future__ import annotations
+
+import threading
+
+import gi
+
+gi.require_version("Gtk", "4.0")
+gi.require_version("Adw", "1")
+from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
+
+from . import ddc, shortcuts  # noqa: E402
+from .controller import Controller, save_config  # noqa: E402
+
+APP_ID = "io.github.DisplayManager"
+
+
+class Window(Adw.ApplicationWindow):
+    def __init__(self, app: Adw.Application):
+        super().__init__(application=app, title="DisplayManager",
+                         default_width=520, default_height=760)
+        try:
+            shortcuts.migrate_legacy()
+        except Exception:  # noqa: BLE001
+            pass
+        self.ctl = Controller()
+        self.inputs: list[int] = []
+        self._updating = False
+        self._busy = 0
+
+        self.input_model = Gtk.StringList()
+        self.toasts = Adw.ToastOverlay()
+        view = Adw.ToolbarView()
+        header = Adw.HeaderBar()
+        self.spinner = Adw.Spinner(visible=False)
+        refresh = Gtk.Button(icon_name="view-refresh-symbolic",
+                             tooltip_text="Refresh monitor state")
+        refresh.connect("clicked", lambda *_: self.refresh(full=True))
+        header.pack_start(refresh)
+        header.pack_end(self.spinner)
+        view.add_top_bar(header)
+
+        self.banner = Adw.Banner(revealed=False)
+        view.add_top_bar(self.banner)
+
+        page = Adw.PreferencesPage()
+        view.set_content(page)
+        self.toasts.set_child(view)
+        self.set_content(self.toasts)
+
+        # --- monitor ------------------------------------------------------
+        g = Adw.PreferencesGroup()
+        self.mon_row = Adw.ActionRow(title="Looking for monitor…")
+        self.mon_row.add_prefix(Gtk.Image(icon_name=APP_ID + "-symbolic",
+                                          pixel_size=32))
+        g.add(self.mon_row)
+        page.add(g)
+
+        # --- quick switch ---------------------------------------------------
+        g = Adw.PreferencesGroup(title="Switch")
+        self.switch_btn = Gtk.Button(label="Switch Computer",
+                                     css_classes=["pill", "suggested-action"],
+                                     halign=Gtk.Align.CENTER,
+                                     margin_top=6, margin_bottom=12)
+        self.switch_btn.connect("clicked", self.on_switch)
+        g.add(self.switch_btn)
+        self.usb_row = Adw.ActionRow(
+            title="Keyboard &amp; Mouse",
+            subtitle="Hand the monitor's USB hub to the other computer")
+        b = Gtk.Button(label="Move", valign=Gtk.Align.CENTER)
+        b.connect("clicked", self.on_usb)
+        self.usb_row.add_suffix(b)
+        g.add(self.usb_row)
+        page.add(g)
+
+        # --- PBP ------------------------------------------------------------
+        g = Adw.PreferencesGroup(title="Side by Side",
+                                 description="Picture-by-Picture: both computers "
+                                             "share the screen")
+        self.pbp_row = Adw.SwitchRow(title="Picture-by-Picture")
+        self.pbp_row.connect("notify::active", self.on_pbp)
+        g.add(self.pbp_row)
+        r = Adw.ActionRow(title="Swap Left and Right")
+        b = Gtk.Button(icon_name="object-flip-horizontal-symbolic",
+                       valign=Gtk.Align.CENTER, tooltip_text="Swap")
+        b.connect("clicked", lambda *_: self.run(self.ctl.swap_video,
+                                                 "Swapped left and right"))
+        r.add_suffix(b)
+        r.set_activatable_widget(b)
+        g.add(r)
+        self.right_row = Adw.ComboRow(title="Right Side Shows",
+                                      model=self.input_model)
+        self.right_row.connect("notify::selected", self.on_right_input)
+        g.add(self.right_row)
+        page.add(g)
+
+        # --- inputs ---------------------------------------------------------
+        g = Adw.PreferencesGroup(title="Computers",
+                                 description="Which monitor input each computer "
+                                             "is plugged into")
+        self.this_row = Adw.ComboRow(title="This Computer",
+                                     model=self.input_model)
+        self.other_row = Adw.ComboRow(title="Other Computer",
+                                      model=self.input_model)
+        self.full_row = Adw.ComboRow(title="Show Full Screen",
+                                     subtitle="Select the active input directly",
+                                     model=self.input_model)
+        self.this_row.connect("notify::selected", self.on_role, "this_input")
+        self.other_row.connect("notify::selected", self.on_role, "other_input")
+        self.full_row.connect("notify::selected", self.on_full_input)
+        detect = Gtk.Button(label="Detect", valign=Gtk.Align.CENTER,
+                            tooltip_text="Use the input currently shown")
+        detect.connect("clicked", self.on_detect_this)
+        self.this_row.add_suffix(detect)
+        self.other_name = Adw.EntryRow(title="Other Computer Name",
+                                       show_apply_button=True)
+        self.other_name.connect("apply", self.on_rename)
+        for w in (self.this_row, self.other_row, self.other_name, self.full_row):
+            g.add(w)
+        page.add(g)
+
+        # --- shortcuts ------------------------------------------------------
+        g = Adw.PreferencesGroup(
+            title="Keyboard Shortcuts",
+            description="System-wide GNOME shortcuts; change keys in "
+                        "Settings → Keyboard → Custom Shortcuts")
+        self.sc_rows = {}
+        for key, (name, _cmd, default) in shortcuts.ACTIONS.items():
+            cur = shortcuts.get(key)
+            row = Adw.SwitchRow(title=GLib.markup_escape_text(
+                                    name.split(": ", 1)[1].capitalize()),
+                                subtitle=self._accel_text(cur or default),
+                                active=cur is not None)
+            row.connect("notify::active", self.on_shortcut, key)
+            self.sc_rows[key] = row
+            g.add(row)
+        page.add(g)
+
+        # --- advanced -------------------------------------------------------
+        g = Adw.PreferencesGroup(title="Advanced")
+        exp = Adw.ExpanderRow(title="Raw VCP Access",
+                              subtitle="Probe manufacturer-specific features")
+        self.code_entry = Adw.EntryRow(title="Feature code (hex, e.g. E7)")
+        self.val_entry = Adw.EntryRow(title="Value (hex, for Set)")
+        self.raw_row = Adw.ActionRow(title="Result", subtitle="—",
+                                     subtitle_selectable=True)
+        box = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
+        for label, cb in (("Get", self.on_raw_get), ("Set", self.on_raw_set)):
+            btn = Gtk.Button(label=label)
+            btn.connect("clicked", cb)
+            box.append(btn)
+        self.raw_row.add_suffix(box)
+        for w in (self.code_entry, self.val_entry, self.raw_row):
+            exp.add_row(w)
+        g.add(exp)
+        page.add(g)
+
+        self.refresh(full=True)
+
+    # ---------------------------------------------------------------- helpers
+    @staticmethod
+    def _accel_text(accel: str) -> str:
+        ok, key, mods = Gtk.accelerator_parse(accel)
+        return Gtk.accelerator_get_label(key, mods) if ok else accel
+
+    def toast(self, msg: str) -> None:
+        self.toasts.add_toast(Adw.Toast(title=GLib.markup_escape_text(msg),
+                                        timeout=3))
+
+    def _set_busy(self, delta: int) -> None:
+        self._busy += delta
+        self.spinner.set_visible(self._busy > 0)
+
+    def bg(self, fn, done=None, error=None):
+        """Run fn() in a worker thread, deliver result on the main loop."""
+        self._set_busy(1)
+
+        def work():
+            try:
+                res, exc = fn(), None
+            except Exception as e:  # noqa: BLE001
+                res, exc = None, e
+
+            def finish():
+                self._set_busy(-1)
+                if exc is not None:
+                    (error or self.on_error)(exc)
+                elif done:
+                    done(res)
+                return False
+            GLib.idle_add(finish)
+        threading.Thread(target=work, daemon=True).start()
+
+    def run(self, fn, ok_msg: str | None = None, then_refresh: bool = True):
+        def done(res):
+            self.toast(res if isinstance(res, str) else ok_msg or "Done")
+            if then_refresh:
+                GLib.timeout_add(2500, lambda: (self.refresh(), False)[1])
+        self.bg(fn, done)
+
+    def on_error(self, exc: Exception) -> None:
+        msg = str(exc)
+        if "permission denied" in msg.lower():
+            self.banner.set_title("No access to the monitor's I2C bus. Run: "
+                                  "sudo usermod -aG i2c $USER, then log out and in.")
+            self.banner.set_revealed(True)
+        self.toast(msg)
+
+    # ---------------------------------------------------------------- refresh
+    def refresh(self, full: bool = False) -> None:
+        def work():
+            if full or self.ctl.monitor is None:
+                self.ctl.connect()
+            inputs = self.ctl.supported_inputs(refresh=False)
+            return inputs, self.ctl.status()
+        self.bg(work, self._apply_state, self._connect_failed)
+
+    def _connect_failed(self, exc: Exception) -> None:
+        self.mon_row.set_title("Monitor not reachable")
+        self.mon_row.set_subtitle(GLib.markup_escape_text(str(exc)))
+        self.on_error(exc)
+
+    def _apply_state(self, res) -> None:
+        inputs, st = res
+        self.banner.set_revealed(False)
+        mon = self.ctl.monitor
+        self._updating = True
+        try:
+            if inputs != self.inputs:
+                self.inputs = inputs
+                self.input_model.splice(0, self.input_model.get_n_items(),
+                                        [self.ctl.input_label(c) for c in inputs])
+            cfg = self.ctl.cfg
+            for row, key in ((self.this_row, "this_input"),
+                             (self.other_row, "other_input")):
+                v = cfg.get(key)
+                row.set_selected(inputs.index(v) if v in inputs
+                                 else Gtk.INVALID_LIST_POSITION)
+            if st.input in inputs:
+                self.full_row.set_selected(inputs.index(st.input))
+            if st.pbp is not None:
+                self.pbp_row.set_active(st.pbp)
+            self.right_row.set_sensitive(bool(st.pbp))
+            if st.right_input in inputs:
+                self.right_row.set_selected(inputs.index(st.right_input))
+            self.pbp_row.set_sensitive(st.pbp is not None)
+            other = cfg.get("other_input")
+            if other is not None:
+                lbl = cfg["input_labels"].get(f"0x{other:02x}", "")
+                if self.other_name.get_text() != lbl:
+                    self.other_name.set_text(lbl)
+        finally:
+            self._updating = False
+
+        parts = [f"Serial {mon.serial}", f"i2c-{mon.bus}"]
+        if st.input is not None:
+            parts.append("Showing " + self.ctl.input_label(st.input))
+        if st.pbp and st.right_input is not None:
+            parts.append("right: " + self.ctl.input_label(st.right_input))
+        self.mon_row.set_title(mon.model)
+        self.mon_row.set_subtitle(GLib.markup_escape_text(" · ".join(parts)))
+        self.usb_row.set_subtitle({
+            True: "Connected to this computer",
+            False: "Connected to the other computer",
+            None: "Hand the monitor's USB hub to the other computer",
+        }[st.usb_here])
+        self.switch_btn.set_label("Move Keyboard & Mouse" if st.pbp
+                                  else "Switch Computer")
+        if st.error:
+            self.toast(st.error)
+
+    # ---------------------------------------------------------------- handlers
+    def on_switch(self, _btn):
+        self.run(self.ctl.switch)
+
+    def on_usb(self, _b):
+        def work():
+            here = self.ctl.usb_here()
+            if here is None:
+                self.ctl.toggle_usb()
+                return "Toggled keyboard and mouse"
+            return self.ctl.set_usb(not here)
+        self.run(work)
+
+    def on_pbp(self, row, _p):
+        if self._updating:
+            return
+        on = row.get_active()
+        self.run(lambda: self.ctl.set_pbp(on),
+                 "Side by side on" if on else "Side by side off")
+
+    def on_role(self, row, _p, key):
+        if self._updating:
+            return
+        i = row.get_selected()
+        if i == Gtk.INVALID_LIST_POSITION or i >= len(self.inputs):
+            return
+        self.ctl.cfg[key] = self.inputs[i]
+        save_config(self.ctl.cfg)
+
+    def on_full_input(self, row, _p):
+        if self._updating:
+            return
+        i = row.get_selected()
+        if i < len(self.inputs):
+            code = self.inputs[i]
+            self.run(lambda: self.ctl.set_input(code),
+                     f"Switching to {self.ctl.input_label(code)}")
+
+    def on_right_input(self, row, _p):
+        if self._updating:
+            return
+        i = row.get_selected()
+        if i < len(self.inputs):
+            code = self.inputs[i]
+            self.run(lambda: self.ctl.set_right_input(code),
+                     f"Right side: {self.ctl.input_label(code)}")
+
+    def on_detect_this(self, _b):
+        def done(code):
+            if code not in self.inputs:
+                self.toast(f"Current input 0x{code:02X} is not in the list")
+                return
+            self.ctl.cfg["this_input"] = code
+            save_config(self.ctl.cfg)
+            self._updating = True
+            self.this_row.set_selected(self.inputs.index(code))
+            self._updating = False
+            self.toast(f"This computer: {self.ctl.input_label(code)}")
+        self.bg(self.ctl.get_input, done)
+
+    def on_rename(self, entry):
+        other = self.ctl.cfg.get("other_input")
+        if other is None:
+            self.toast("Pick the other computer's input first")
+            return
+        name = entry.get_text().strip()
+        labels = self.ctl.cfg["input_labels"]
+        if name:
+            labels[f"0x{other:02x}"] = name
+        else:
+            labels.pop(f"0x{other:02x}", None)
+        save_config(self.ctl.cfg)
+        self.inputs = []          # force relabel
+        self.refresh()
+
+    def on_shortcut(self, row, _p, key):
+        accel = shortcuts.ACTIONS[key][2] if row.get_active() else None
+        try:
+            shortcuts.set(key, accel)
+        except Exception as e:  # noqa: BLE001
+            self.toast(str(e))
+
+    def _raw_code(self):
+        try:
+            return int(self.code_entry.get_text().strip(), 16)
+        except ValueError:
+            self.toast("Enter a feature code in hex")
+            return None
+
+    def on_raw_get(self, _b):
+        code = self._raw_code()
+        if code is None:
+            return
+
+        def done(v):
+            self.raw_row.set_subtitle(
+                f"VCP {code:02X}: value 0x{v.value:04X}  raw "
+                + " ".join(f"{b:02X}" for b in v.raw))
+        self.bg(lambda: ddc.getvcp(self.ctl.bus, code), done,
+                lambda e: self.raw_row.set_subtitle(
+                    GLib.markup_escape_text(str(e))))
+
+    def on_raw_set(self, _b):
+        code = self._raw_code()
+        if code is None:
+            return
+        try:
+            val = int(self.val_entry.get_text().strip(), 16)
+        except ValueError:
+            self.toast("Enter a value in hex")
+            return
+        self.run(lambda: ddc.setvcp(self.ctl.bus, code, val),
+                 f"Wrote 0x{val:X} to VCP {code:02X}")
+
+
+class App(Adw.Application):
+    def __init__(self):
+        super().__init__(application_id=APP_ID,
+                         flags=Gio.ApplicationFlags.DEFAULT_FLAGS)
+
+    def do_startup(self):
+        Adw.Application.do_startup(self)
+        # When run from a source checkout, find the bundled icons too.
+        from gi.repository import Gdk
+        import os
+        icons = os.path.join(os.path.dirname(os.path.dirname(
+            os.path.abspath(__file__))), "data", "icons")
+        display = Gdk.Display.get_default()
+        if display and os.path.isdir(icons):
+            Gtk.IconTheme.get_for_display(display).add_search_path(icons)
+        Gtk.Window.set_default_icon_name(APP_ID)
+
+    def do_activate(self):
+        win = self.get_active_window() or Window(self)
+        win.present()
+
+
+def main() -> int:
+    return App().run([])
