@@ -147,14 +147,22 @@ class Window(Adw.ApplicationWindow):
                         "Settings → Keyboard → Custom Shortcuts")
         self.sc_rows = {}
         for key, (name, _cmd, default) in shortcuts.ACTIONS.items():
-            cur = shortcuts.get(key)
-            row = Adw.SwitchRow(title=GLib.markup_escape_text(
-                                    name.split(": ", 1)[1].capitalize()),
-                                subtitle=self._accel_text(cur or default),
-                                active=cur is not None)
-            row.connect("notify::active", self.on_shortcut, key)
-            self.sc_rows[key] = row
+            if key in shortcuts.LAYOUT_ACTIONS:
+                continue
+            row = self._shortcut_row(
+                key, name.split(": ", 1)[1].capitalize(), default)
             g.add(row)
+        exp = Adw.ExpanderRow(title="Layouts",
+                              subtitle="One shortcut per screen layout")
+        all_btn = Gtk.Button(label="Enable All", valign=Gtk.Align.CENTER)
+        all_btn.connect("clicked", self.on_enable_layout_shortcuts)
+        exp.add_suffix(all_btn)
+        for lay in LAYOUTS:
+            key = f"layout-{lay.key}"
+            title = f"{lay.title} ({self._layout_subtitle(lay)})"
+            exp.add_row(self._shortcut_row(key, title,
+                                           shortcuts.ACTIONS[key][2]))
+        g.add(exp)
         page.add(g)
 
         # --- advanced -------------------------------------------------------
@@ -420,6 +428,22 @@ class Window(Adw.ApplicationWindow):
         save_config(self.ctl.cfg)
         self.inputs = []          # force relabel
         self.refresh()
+
+    def _shortcut_row(self, key: str, title: str, default: str) -> Adw.SwitchRow:
+        cur = shortcuts.get(key)
+        row = Adw.SwitchRow(title=GLib.markup_escape_text(title),
+                            subtitle=self._accel_text(cur or default),
+                            active=cur is not None)
+        row.connect("notify::active", self.on_shortcut, key)
+        self.sc_rows[key] = row
+        return row
+
+    def on_enable_layout_shortcuts(self, _btn):
+        for key in shortcuts.LAYOUT_ACTIONS:
+            row = self.sc_rows.get(key)
+            if row and not row.get_active():
+                row.set_active(True)        # triggers on_shortcut
+        self.toast("Layout shortcuts enabled")
 
     def on_shortcut(self, row, _p, key):
         accel = shortcuts.ACTIONS[key][2] if row.get_active() else None

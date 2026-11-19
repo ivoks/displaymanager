@@ -30,8 +30,20 @@ displaymanager right 0x0f      # PBP right-side input
 displaymanager usb here|away|toggle   # keyboard & mouse (KVM)
 ```
 
-The app can install system-wide GNOME shortcuts (default Super+Ctrl+K/U/P/S/L)
-that call these commands; change the keys in Settings → Keyboard.
+The app can install system-wide GNOME shortcuts that call these commands
+(all off by default; change the keys in Settings → Keyboard → Custom
+Shortcuts):
+
+| Keys | Action |
+|------|--------|
+| Super+Ctrl+K | Switch computer |
+| Super+Ctrl+U | Move keyboard & mouse |
+| Super+Ctrl+P | Toggle side-by-side |
+| Super+Ctrl+S | Swap left/right |
+| Super+Ctrl+L | Next layout |
+| Super+Alt+1 … 8 | Single, Even Split, Wide Left, Wider Left, Wide Right, Wider Right, Small Inset, Large Inset |
+
+Super+Ctrl+1 … 9 is not used because GNOME Shell already binds it.
 
 ## Layouts
 

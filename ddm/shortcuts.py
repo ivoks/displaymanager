@@ -10,6 +10,8 @@ import os
 
 from gi.repository import Gio
 
+from .controller import LAYOUTS
+
 SCHEMA = "org.gnome.settings-daemon.plugins.media-keys"
 CHILD = SCHEMA + ".custom-keybinding"
 BASE = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/"
@@ -24,6 +26,15 @@ ACTIONS = {
     "swap": ("Monitor: swap left/right", "swap", "<Super><Control>s"),
     "layout": ("Monitor: next layout", "layout next", "<Super><Control>l"),
 }
+
+# One shortcut per layout: Super+Alt+1 … 8, in the order shown in the app.
+# (Super+Ctrl+digit is taken by GNOME Shell's "open new window of dock app".)
+LAYOUT_ACTIONS = {
+    f"layout-{lay.key}": (f"Monitor: {lay.title} layout", f"layout {lay.key}",
+                          f"<Super><Alt>{i}")
+    for i, lay in enumerate(LAYOUTS, start=1)
+}
+ACTIONS.update(LAYOUT_ACTIONS)
 
 
 def _available() -> bool:
