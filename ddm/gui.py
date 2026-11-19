@@ -13,7 +13,7 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from . import ddc, shortcuts  # noqa: E402
-from .controller import Controller, save_config  # noqa: E402
+from .controller import LAYOUTS, Controller, Layout, save_config  # noqa: E402
 
 APP_ID = "io.github.DisplayManager"
 
@@ -30,6 +30,7 @@ class Window(Adw.ApplicationWindow):
         self.inputs: list[int] = []
         self._updating = False
         self._busy = 0
+        self.layout_codes = {lay.code for lay in LAYOUTS}
 
         self.input_model = Gtk.StringList()
         self.toasts = Adw.ToastOverlay()
@@ -63,10 +64,11 @@ class Window(Adw.ApplicationWindow):
         g = Adw.PreferencesGroup(title="Switch")
         self.switch_btn = Gtk.Button(label="Switch Computer",
                                      css_classes=["pill", "suggested-action"],
-                                     halign=Gtk.Align.CENTER,
-                                     margin_top=6, margin_bottom=12)
+                                     halign=Gtk.Align.CENTER)
         self.switch_btn.connect("clicked", self.on_switch)
         g.add(self.switch_btn)
+        page.add(g)
+        g = Adw.PreferencesGroup()
         self.usb_row = Adw.ActionRow(
             title="Keyboard &amp; Mouse",
             subtitle="Hand the monitor's USB hub to the other computer")
@@ -76,14 +78,29 @@ class Window(Adw.ApplicationWindow):
         g.add(self.usb_row)
         page.add(g)
 
-        # --- PBP ------------------------------------------------------------
-        g = Adw.PreferencesGroup(title="Side by Side",
-                                 description="Picture-by-Picture: both computers "
-                                             "share the screen")
-        self.pbp_row = Adw.SwitchRow(title="Picture-by-Picture")
-        self.pbp_row.connect("notify::active", self.on_pbp)
-        g.add(self.pbp_row)
-        r = Adw.ActionRow(title="Swap Left and Right")
+        # --- layout ---------------------------------------------------------
+        g = Adw.PreferencesGroup(title="Layout",
+                                 description="How the screen is shared between "
+                                             "the two inputs")
+        self.layout_box = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE,
+                                      homogeneous=True, column_spacing=6,
+                                      row_spacing=6, max_children_per_line=4,
+                                      min_children_per_line=2)
+        self.layout_btns: dict[int, Gtk.ToggleButton] = {}
+        group_leader = None
+        for lay in LAYOUTS:
+            btn = self._layout_button(lay)
+            if group_leader is None:
+                group_leader = btn
+            else:
+                btn.set_group(group_leader)
+            btn.connect("toggled", self.on_layout, lay)
+            self.layout_btns[lay.code] = btn
+            self.layout_box.append(btn)
+        g.add(self.layout_box)
+        page.add(g)
+        g = Adw.PreferencesGroup()
+        r = Adw.ActionRow(title="Swap Inputs")
         b = Gtk.Button(icon_name="object-flip-horizontal-symbolic",
                        valign=Gtk.Align.CENTER, tooltip_text="Swap")
         b.connect("clicked", lambda *_: self.run(self.ctl.swap_video,
@@ -91,7 +108,8 @@ class Window(Adw.ApplicationWindow):
         r.add_suffix(b)
         r.set_activatable_widget(b)
         g.add(r)
-        self.right_row = Adw.ComboRow(title="Right Side Shows",
+        self.right_row = Adw.ComboRow(title="Second Input",
+                                      subtitle="Right side, or the inset",
                                       model=self.input_model)
         self.right_row.connect("notify::selected", self.on_right_input)
         g.add(self.right_row)
@@ -160,6 +178,57 @@ class Window(Adw.ApplicationWindow):
 
         self.refresh(full=True)
 
+    # ---------------------------------------------------------------- layouts
+    @staticmethod
+    def _layout_subtitle(lay: Layout) -> str:
+        if lay.kind == "pbp":
+            a = round(lay.left * 100)
+            return f"{a} : {100 - a}"
+        return {"single": "Full screen", "pip": "Picture in picture"}[lay.kind]
+
+    def _layout_button(self, lay: Layout) -> Gtk.ToggleButton:
+        area = Gtk.DrawingArea(content_width=96, content_height=44,
+                               halign=Gtk.Align.CENTER)
+        area.set_draw_func(self._draw_layout, lay)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4,
+                      margin_top=6, margin_bottom=6)
+        box.append(area)
+        box.append(Gtk.Label(label=lay.title))
+        box.append(Gtk.Label(label=self._layout_subtitle(lay),
+                             css_classes=["caption", "dim-label"]))
+        btn = Gtk.ToggleButton(child=box, css_classes=["flat"],
+                               tooltip_text=f"{lay.title} (VCP E9 = 0x{lay.code:02X})")
+        return btn
+
+    @staticmethod
+    def _draw_layout(_area, cr, w, h, lay: Layout):
+        def rect(x, y, rw, rh, rgb, r=3.0):
+            cr.new_sub_path()
+            cr.arc(x + rw - r, y + r, r, -1.5708, 0)
+            cr.arc(x + rw - r, y + rh - r, r, 0, 1.5708)
+            cr.arc(x + r, y + rh - r, r, 1.5708, 3.1416)
+            cr.arc(x + r, y + r, r, 3.1416, 4.7124)
+            cr.close_path()
+            cr.set_source_rgb(*rgb)
+            cr.fill()
+        main, second = (0.21, 0.52, 0.89), (0.20, 0.82, 0.48)
+        bezel = (0.24, 0.22, 0.27)
+        rect(0, 0, w, h, bezel, 5)
+        x0, y0, iw, ih, gap = 3, 3, w - 6, h - 6, 2
+        if lay.kind == "single":
+            rect(x0, y0, iw, ih, main)
+        elif lay.kind == "pbp":
+            lw = round((iw - gap) * lay.left)
+            rect(x0, y0, lw, ih, main)
+            rect(x0 + lw + gap, y0, iw - lw - gap, ih, second)
+        else:
+            rect(x0, y0, iw, ih, main)
+            f = 0.30 if lay.key == "pip-small" else 0.45
+            pw, ph = iw * f, ih * f
+            cr.set_source_rgb(*bezel)
+            rect(x0 + iw - pw - 4, y0 + ih - ph - 4, pw + 2, ph + 2, bezel, 2)
+            rect(x0 + iw - pw - 3, y0 + ih - ph - 3, pw, ph, second, 2)
+
     # ---------------------------------------------------------------- helpers
     @staticmethod
     def _accel_text(accel: str) -> str:
@@ -215,6 +284,7 @@ class Window(Adw.ApplicationWindow):
             if full or self.ctl.monitor is None:
                 self.ctl.connect()
             inputs = self.ctl.supported_inputs(refresh=False)
+            self.layout_codes = {lay.code for lay in self.ctl.supported_layouts()}
             return inputs, self.ctl.status()
         self.bg(work, self._apply_state, self._connect_failed)
 
@@ -241,12 +311,15 @@ class Window(Adw.ApplicationWindow):
                                  else Gtk.INVALID_LIST_POSITION)
             if st.input in inputs:
                 self.full_row.set_selected(inputs.index(st.input))
-            if st.pbp is not None:
-                self.pbp_row.set_active(st.pbp)
+            for code, btn in self.layout_btns.items():
+                btn.set_visible(code in self.layout_codes)
+                btn.get_parent().set_visible(code in self.layout_codes)
+                if code == st.pxp_raw:
+                    btn.set_active(True)
+            self.layout_box.set_sensitive(st.pxp_raw is not None)
             self.right_row.set_sensitive(bool(st.pbp))
             if st.right_input in inputs:
                 self.right_row.set_selected(inputs.index(st.right_input))
-            self.pbp_row.set_sensitive(st.pbp is not None)
             other = cfg.get("other_input")
             if other is not None:
                 lbl = cfg["input_labels"].get(f"0x{other:02x}", "")
@@ -258,8 +331,11 @@ class Window(Adw.ApplicationWindow):
         parts = [f"Serial {mon.serial}", f"i2c-{mon.bus}"]
         if st.input is not None:
             parts.append("Showing " + self.ctl.input_label(st.input))
-        if st.pbp and st.right_input is not None:
-            parts.append("right: " + self.ctl.input_label(st.right_input))
+        lay = next((x for x in LAYOUTS if x.code == st.pxp_raw), None)
+        if lay and lay.kind != "single":
+            parts.append(lay.title)
+            if st.right_input is not None:
+                parts.append("second: " + self.ctl.input_label(st.right_input))
         self.mon_row.set_title(mon.model)
         self.mon_row.set_subtitle(GLib.markup_escape_text(" · ".join(parts)))
         self.usb_row.set_subtitle({
@@ -285,12 +361,10 @@ class Window(Adw.ApplicationWindow):
             return self.ctl.set_usb(not here)
         self.run(work)
 
-    def on_pbp(self, row, _p):
-        if self._updating:
+    def on_layout(self, btn, lay: Layout):
+        if self._updating or not btn.get_active():
             return
-        on = row.get_active()
-        self.run(lambda: self.ctl.set_pbp(on),
-                 "Side by side on" if on else "Side by side off")
+        self.run(lambda: self.ctl.set_layout(lay.code), f"Layout: {lay.title}")
 
     def on_role(self, row, _p, key):
         if self._updating:

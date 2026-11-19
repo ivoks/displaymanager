@@ -22,8 +22,21 @@ otherwise switch the full-screen input between this and the other computer.
 .BR "usb " [ here | away | toggle ]
 Move the monitor's USB hub (KVM).
 .TP
+.BR "layout " [ list | next | \fINAME\fR]
+List or select the screen layout:
+.BR single ,
+.BR 50-50 ,
+.BR 75-25 ,
+.BR 80-20 ,
+.BR 25-75 ,
+.BR 20-80 ,
+.BR pip-small ,
+.BR pip-large .
+.B next
+cycles through the multi-input layouts.
+.TP
 .BR "pbp on" | off | toggle
-Control Picture-by-Picture.
+Switch between the last used multi-input layout and a single input.
 .TP
 .B swap
 Swap the left and right Picture-by-Picture sides.

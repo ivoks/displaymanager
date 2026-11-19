@@ -22,22 +22,42 @@ Launch **DisplayManager** from the app grid, or use the CLI:
 ```
 displaymanager status
 displaymanager switch          # PBP: move KVM; single view: flip input
-displaymanager pbp on|off|toggle
+displaymanager layout list|next|<name>   # see layouts below
+displaymanager pbp on|off|toggle    # last used layout / single
 displaymanager swap            # swap left/right in PBP
 displaymanager input 0x19      # full-screen / left input
 displaymanager right 0x0f      # PBP right-side input
 displaymanager usb here|away|toggle   # keyboard & mouse (KVM)
 ```
 
-The app can install system-wide GNOME shortcuts (default Super+Ctrl+K/U/P/S)
+The app can install system-wide GNOME shortcuts (default Super+Ctrl+K/U/P/S/L)
 that call these commands; change the keys in Settings → Keyboard.
+
+## Layouts
+
+| Name | Layout | Left : Right | `E9` |
+|------|--------|--------------|------|
+| `single` | Single input, full screen | — | `00` |
+| `50-50` | Even Split | 50 : 50 | `24` |
+| `75-25` | Wide Left | 75 : 25 | `2A` |
+| `80-20` | Wider Left | 80 : 20 | `28` |
+| `25-75` | Wide Right | 25 : 75 | `29` |
+| `20-80` | Wider Right | 20 : 80 | `27` |
+| `pip-small` | Small inset (picture in picture) | — | `21` |
+| `pip-large` | Large inset (picture in picture) | — | `22` |
+
+The left side (or the full picture) is the input selected with `60`; the
+right side (or the inset) is the second input, `E8`. The splits were
+measured from the resolution the monitor gives the right-hand source
+(1280, 1024, 3840, 4096 of 5120 pixels). Only layouts the monitor lists in
+its capabilities are shown.
 
 ## VCP codes on the U4025QW
 
 | Code | Meaning | Values | Verified |
 |------|---------|--------|----------|
 | `60` | Input (left side in PBP) | `0F` DP, `11` HDMI, `19` Thunderbolt | yes |
-| `E9` | PxP mode | `00` off, `24` PBP | yes |
+| `E9` | Layout (PxP mode) | see Layouts | yes |
 | `E8` | PBP right-side input | same codes as `60` | read yes |
 | `E5` | Swap PBP video | write `F001` | yes |
 | `E7` | USB upstream (KVM) | write `FF00` = toggle; read-back does not change | yes |

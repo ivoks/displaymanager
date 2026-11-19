@@ -34,6 +34,41 @@ INPUT_NAMES = {
     0x19: "Thunderbolt", 0x1B: "USB-C", 0x1C: "USB-C 2",
 }
 
+@dataclass(frozen=True)
+class Layout:
+    code: int        # value of VCP E9 (PxP mode)
+    key: str         # CLI name
+    title: str
+    kind: str        # "single" | "pbp" | "pip"
+    left: float = 1.0  # share of the width given to the main (left) input
+
+
+# Measured on a U4025QW by watching the resolution the right-hand source is
+# given in each mode (panel is 5120x2160).
+LAYOUTS = [
+    Layout(0x00, "single", "Single", "single"),
+    Layout(0x24, "50-50", "Even Split", "pbp", 0.50),
+    Layout(0x2A, "75-25", "Wide Left", "pbp", 0.75),
+    Layout(0x28, "80-20", "Wider Left", "pbp", 0.80),
+    Layout(0x29, "25-75", "Wide Right", "pbp", 0.25),
+    Layout(0x27, "20-80", "Wider Right", "pbp", 0.20),
+    Layout(0x21, "pip-small", "Small Inset", "pip"),
+    Layout(0x22, "pip-large", "Large Inset", "pip"),
+]
+LAYOUT_BY_CODE = {lay.code: lay for lay in LAYOUTS}
+
+
+def find_layout(name: str) -> Layout | None:
+    name = name.strip().lower().replace("/", "-").replace(":", "-")
+    for lay in LAYOUTS:
+        if name in (lay.key, lay.title.lower()):
+            return lay
+    try:
+        return LAYOUT_BY_CODE.get(int(name, 16))
+    except ValueError:
+        return None
+
+
 DEFAULTS = {
     "monitor_serial": None,     # pick this monitor if several are attached
     "bus": None,                # cached bus once probed
@@ -41,6 +76,8 @@ DEFAULTS = {
     "other_input": None,        # VCP 60 value of the other computer (Mac)
     "input_labels": {},         # {"0x1b": "MacBook"}
     "inputs": None,             # cached list of supported input codes
+    "layouts": None,            # cached E9 values the monitor accepts
+    "last_layout": 0x24,        # multi-view layout restored by "pbp on"
     # USB devices that live behind the monitor's KVM-switched hub; if any is
     # present on this machine, the keyboard/mouse are here.  (U4025QW:
     # Realtek HID functions on the switched sub-hubs.)  The monitor does not
@@ -163,8 +200,48 @@ class Controller:
         return self.get_pxp() != self.vcp["pxp_off"]
 
     def set_pbp(self, on: bool) -> None:
-        ddc.setvcp(self.bus, self.vcp["pxp_mode"],
-                   self.vcp["pbp_on"] if on else self.vcp["pxp_off"])
+        if on:
+            code = self.cfg.get("last_layout") or self.vcp["pbp_on"]
+            if code == self.vcp["pxp_off"]:
+                code = self.vcp["pbp_on"]
+            self.set_layout(code)
+        else:
+            self.set_layout(self.vcp["pxp_off"])
+
+    # ---- layouts -----------------------------------------------------------
+    def supported_layouts(self, refresh: bool = False) -> list[Layout]:
+        codes = self.cfg.get("layouts")
+        if not codes or refresh:
+            try:
+                caps = ddc.capabilities(self.bus)
+                codes = sorted(caps.get(self.vcp["pxp_mode"], {}).keys())
+            except ddc.DDCError:
+                codes = []
+            if codes:
+                self.cfg["layouts"] = codes
+                save_config(self.cfg)
+        if not codes:
+            codes = [self.vcp["pxp_off"], self.vcp["pbp_on"]]
+        return [lay for lay in LAYOUTS if lay.code in codes]
+
+    def get_layout(self) -> int:
+        return self.get_pxp()
+
+    def set_layout(self, code: int) -> None:
+        ddc.setvcp(self.bus, self.vcp["pxp_mode"], code)
+        if code != self.vcp["pxp_off"] and self.cfg.get("last_layout") != code:
+            self.cfg["last_layout"] = code
+            save_config(self.cfg)
+
+    def next_layout(self) -> Layout:
+        """Cycle through the multi-view layouts the monitor supports."""
+        multi = [lay for lay in self.supported_layouts() if lay.kind != "single"]
+        cur = self.get_layout()
+        codes = [lay.code for lay in multi]
+        nxt = multi[(codes.index(cur) + 1) % len(multi)] if cur in codes \
+            else multi[0]
+        self.set_layout(nxt.code)
+        return nxt
 
     def get_right_input(self) -> int:
         return ddc.getvcp(self.bus, self.vcp["pbp_right_input"]).low

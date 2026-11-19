@@ -8,7 +8,7 @@ import argparse
 import sys
 
 from . import ddc
-from .controller import Controller
+from .controller import LAYOUT_BY_CODE, Controller, find_layout
 
 
 def _notify(msg: str) -> None:
@@ -49,6 +49,10 @@ def main(argv: list[str]) -> int:
     sub.add_parser("swap", help="swap PBP left/right")
     s = sub.add_parser("pbp", help="picture-by-picture on/off/toggle")
     s.add_argument("state", choices=["on", "off", "toggle"])
+    s = sub.add_parser("layout", help="screen layout: list, next, or a name "
+                                      "(single, 50-50, 75-25, 80-20, 25-75, "
+                                      "20-80, pip-small, pip-large)")
+    s.add_argument("name", nargs="?", default="list")
     s = sub.add_parser("input", help="select input by hex code, e.g. 0x1b")
     s.add_argument("code")
     s = sub.add_parser("right", help="select PBP right-side input, e.g. 0x19")
@@ -66,8 +70,10 @@ def main(argv: list[str]) -> int:
                   f"{mon.connector}  /dev/i2c-{mon.bus}")
             print(f"Input:    {ctl.input_label(st.input)} (0x{st.input:02X})"
                   if st.input is not None else f"Input:    ? {st.error}")
-            print(f"PBP:      {'on' if st.pbp else 'off'} (E9=0x{st.pxp_raw:02X})"
-                  if st.pxp_raw is not None else "PBP:      unknown")
+            lay = LAYOUT_BY_CODE.get(st.pxp_raw)
+            print(f"Layout:   {lay.title if lay else 'unknown'} "
+                  f"(E9=0x{st.pxp_raw:02X})"
+                  if st.pxp_raw is not None else "Layout:   unknown")
             if st.right_input is not None:
                 print(f"Right:    {ctl.input_label(st.right_input)} "
                       f"(0x{st.right_input:02X})")
@@ -101,6 +107,23 @@ def main(argv: list[str]) -> int:
             on = (not ctl.is_pbp()) if a.state == "toggle" else a.state == "on"
             ctl.set_pbp(on)
             msg = "Side by side " + ("on" if on else "off")
+        elif a.cmd == "layout":
+            if a.name == "list":
+                cur = ctl.get_layout()
+                for lay in ctl.supported_layouts():
+                    mark = "*" if lay.code == cur else " "
+                    print(f"{mark} {lay.key:10} {lay.title:13} 0x{lay.code:02X}")
+                return 0
+            if a.name == "next":
+                lay = ctl.next_layout()
+            else:
+                lay = find_layout(a.name)
+                if lay is None:
+                    print(f"error: unknown layout {a.name!r}; "
+                          "try 'layout list'", file=sys.stderr)
+                    return 2
+                ctl.set_layout(lay.code)
+            msg = f"Layout: {lay.title}"
         elif a.cmd == "input":
             code = int(a.code, 16)
             ctl.set_input(code)

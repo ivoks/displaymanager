@@ -22,6 +22,7 @@ ACTIONS = {
     "usb": ("Monitor: move keyboard & mouse", "usb toggle", "<Super><Control>u"),
     "pbp": ("Monitor: toggle side-by-side", "pbp toggle", "<Super><Control>p"),
     "swap": ("Monitor: swap left/right", "swap", "<Super><Control>s"),
+    "layout": ("Monitor: next layout", "layout next", "<Super><Control>l"),
 }
 
 
