@@ -47,8 +47,28 @@ class Window(Adw.ApplicationWindow):
         self.banner = Adw.Banner(revealed=False)
         view.add_top_bar(self.banner)
 
+        # Tabs: everyday controls, shortcuts, and low-level tools.
         page = Adw.PreferencesPage()
-        view.set_content(page)
+        sc_page = Adw.PreferencesPage()
+        adv_page = Adw.PreferencesPage()
+        stack = Adw.ViewStack()
+        stack.add_titled_with_icon(page, "display", "Display",
+                                   "video-display-symbolic")
+        stack.add_titled_with_icon(sc_page, "shortcuts", "Shortcuts",
+                                   "input-keyboard-symbolic")
+        stack.add_titled_with_icon(adv_page, "advanced", "Advanced",
+                                   "applications-engineering-symbolic")
+        view.set_content(stack)
+        switcher = Adw.ViewSwitcher(stack=stack,
+                                    policy=Adw.ViewSwitcherPolicy.WIDE)
+        header.set_title_widget(switcher)
+        # On narrow windows move the tabs to a bar at the bottom.
+        bottom = Adw.ViewSwitcherBar(stack=stack)
+        view.add_bottom_bar(bottom)
+        bp = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 420sp"))
+        bp.add_setter(header, "title-widget", Adw.WindowTitle(title="DisplayManager"))
+        bp.add_setter(bottom, "reveal", True)
+        self.add_breakpoint(bp)
         self.toasts.set_child(view)
         self.set_content(self.toasts)
 
@@ -72,9 +92,9 @@ class Window(Adw.ApplicationWindow):
         self.usb_row = Adw.ActionRow(
             title="Keyboard &amp; Mouse",
             subtitle="Hand the monitor's USB hub to the other computer")
-        b = Gtk.Button(label="Move", valign=Gtk.Align.CENTER)
-        b.connect("clicked", self.on_usb)
-        self.usb_row.add_suffix(b)
+        self.usb_btn = Gtk.Button(label="Move", valign=Gtk.Align.CENTER)
+        self.usb_btn.connect("clicked", self.on_usb)
+        self.usb_row.add_suffix(self.usb_btn)
         g.add(self.usb_row)
         page.add(g)
 
@@ -140,35 +160,38 @@ class Window(Adw.ApplicationWindow):
             g.add(w)
         page.add(g)
 
-        # --- shortcuts ------------------------------------------------------
+        # --- shortcuts tab ---------------------------------------------------
         g = Adw.PreferencesGroup(
-            title="Keyboard Shortcuts",
-            description="System-wide GNOME shortcuts; change keys in "
-                        "Settings → Keyboard → Custom Shortcuts")
+            title="General",
+            description="System-wide GNOME shortcuts. Change the keys in "
+                        "Settings → Keyboard → Custom Shortcuts.")
         self.sc_rows = {}
         for key, (name, _cmd, default) in shortcuts.ACTIONS.items():
             if key in shortcuts.LAYOUT_ACTIONS:
                 continue
-            row = self._shortcut_row(
-                key, name.split(": ", 1)[1].capitalize(), default)
-            g.add(row)
-        exp = Adw.ExpanderRow(title="Layouts",
-                              subtitle="One shortcut per screen layout")
-        all_btn = Gtk.Button(label="Enable All", valign=Gtk.Align.CENTER)
+            g.add(self._shortcut_row(
+                key, name.split(": ", 1)[1].capitalize(), default))
+        sc_page.add(g)
+
+        g = Adw.PreferencesGroup(title="Layouts",
+                                 description="Jump straight to a screen layout")
+        all_btn = Gtk.Button(label="Enable All", css_classes=["flat"],
+                             valign=Gtk.Align.CENTER)
         all_btn.connect("clicked", self.on_enable_layout_shortcuts)
-        exp.add_suffix(all_btn)
+        g.set_header_suffix(all_btn)
         for lay in LAYOUTS:
             key = f"layout-{lay.key}"
-            title = f"{lay.title} ({self._layout_subtitle(lay)})"
-            exp.add_row(self._shortcut_row(key, title,
-                                           shortcuts.ACTIONS[key][2]))
-        g.add(exp)
-        page.add(g)
+            g.add(self._shortcut_row(
+                key, f"{lay.title} ({self._layout_subtitle(lay)})",
+                shortcuts.ACTIONS[key][2]))
+        sc_page.add(g)
 
-        # --- advanced -------------------------------------------------------
-        g = Adw.PreferencesGroup(title="Advanced")
-        exp = Adw.ExpanderRow(title="Raw VCP Access",
-                              subtitle="Probe manufacturer-specific features")
+        # --- advanced tab ----------------------------------------------------
+        g = Adw.PreferencesGroup(
+            title="Raw VCP Access",
+            description="Read or write any DDC/CI feature, e.g. to probe "
+                        "manufacturer-specific codes. Writing the wrong value "
+                        "can change monitor settings.")
         self.code_entry = Adw.EntryRow(title="Feature code (hex, e.g. E7)")
         self.val_entry = Adw.EntryRow(title="Value (hex, for Set)")
         self.raw_row = Adw.ActionRow(title="Result", subtitle="—",
@@ -180,9 +203,8 @@ class Window(Adw.ApplicationWindow):
             box.append(btn)
         self.raw_row.add_suffix(box)
         for w in (self.code_entry, self.val_entry, self.raw_row):
-            exp.add_row(w)
-        g.add(exp)
-        page.add(g)
+            g.add(w)
+        adv_page.add(g)
 
         self.refresh(full=True)
 
@@ -353,6 +375,9 @@ class Window(Adw.ApplicationWindow):
         }[st.usb_here])
         self.switch_btn.set_label("Move Keyboard & Mouse" if st.pbp
                                   else "Switch Computer")
+        # With two inputs on screen the big button already moves the
+        # keyboard and mouse, so the row only shows where they are.
+        self.usb_btn.set_visible(not st.pbp)
         if st.error:
             self.toast(st.error)
 
