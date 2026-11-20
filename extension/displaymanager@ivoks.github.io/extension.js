@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ante Karamatic
 //
-// DisplayManager Edge Switch
+// DisplayManager GNOME Shell integration
 //
 // Wayland doesn't let ordinary applications see the pointer position, so
 // this small extension puts pressure barriers (like GNOME's hot corner) on
@@ -15,8 +15,11 @@
 // GNOME's on-screen pop-up (the one used for volume keys); the Shell's own
 // ShowOSD method only accepts calls from GNOME components.
 //
+// And it adds a "Monitor" tile to Quick Settings (see quickmenu.js).
+//
 // Settings come from DisplayManager's config file:
-//   ~/.config/displaymanager/config.json  {"edge_switch": true, "connector": "DP-1"}
+//   ~/.config/displaymanager/config.json
+//   {"edge_switch": true, "quick_settings": true, "connector": "DP-1"}
 
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
@@ -26,6 +29,8 @@ import Shell from 'gi://Shell';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Layout from 'resource:///org/gnome/shell/ui/layout.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+
+import {createIndicator, displaymanagerPath} from './quickmenu.js';
 
 const PRESSURE_THRESHOLD = 100;     // px pushed into the edge…
 const PRESSURE_TIMEOUT = 1000;      // …within this many ms
@@ -72,6 +77,7 @@ export default class EdgeSwitchExtension extends Extension {
         this._dbus = Gio.DBusExportedObject.wrapJSObject(DBUS_INTERFACE, this);
         this._dbus.export(Gio.DBus.session, DBUS_PATH);
 
+        this._indicator = null;
         this._rebuild();
     }
 
@@ -81,6 +87,7 @@ export default class EdgeSwitchExtension extends Extension {
             this._dbus = null;
         }
         this._clear();
+        this._removeQuickSettings();
         if (this._dirMonitor) {
             this._dirMonitor.disconnect(this._dirMonitorId);
             this._dirMonitor.cancel();
@@ -125,9 +132,36 @@ export default class EdgeSwitchExtension extends Extension {
         this._barriers = [];
     }
 
+    _syncQuickSettings(cfg) {
+        const wanted = cfg.quick_settings !== false;
+        if (wanted && !this._indicator) {
+            this._indicator = createIndicator();
+            const qs = Main.panel.statusArea.quickSettings;
+            qs.addExternalIndicator(this._indicator);
+            // Fresh state whenever the Quick Settings panel opens.
+            this._qsOpenId = qs.menu.connect('open-state-changed', (_m, open) => {
+                if (open)
+                    this._indicator?.toggle.refresh();
+            });
+            this._indicator.toggle.refresh();
+        } else if (!wanted && this._indicator) {
+            this._removeQuickSettings();
+        }
+    }
+
+    _removeQuickSettings() {
+        if (this._qsOpenId) {
+            Main.panel.statusArea.quickSettings.menu.disconnect(this._qsOpenId);
+            this._qsOpenId = 0;
+        }
+        this._indicator?.destroy();
+        this._indicator = null;
+    }
+
     _rebuild() {
         this._clear();
         const cfg = this._readConfig();
+        this._syncQuickSettings(cfg);
         if (!cfg.edge_switch || !cfg.connector)
             return;
 
@@ -166,10 +200,8 @@ export default class EdgeSwitchExtension extends Extension {
             return;
         this._lastSwitch = now;
 
-        const exe = GLib.find_program_in_path('displaymanager') ??
-            GLib.build_filenamev([GLib.get_home_dir(), '.local', 'bin', 'displaymanager']);
         try {
-            const proc = Gio.Subprocess.new([exe, 'cross', edge],
+            const proc = Gio.Subprocess.new([displaymanagerPath(), 'cross', edge],
                 Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE);
             proc.wait_async(null, null);
         } catch (e) {

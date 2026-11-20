@@ -9,3 +9,14 @@ os.environ["XDG_CONFIG_HOME"] = tempfile.mkdtemp(prefix="displaymanager-test-")
 os.environ["LANGUAGE"] = "C"
 os.environ["DISPLAYMANAGER_LOCALEDIR"] = "/nonexistent"
 os.environ.setdefault("GSETTINGS_BACKEND", "memory")
+
+
+# No test may run the real ddcutil: fail loudly if one tries.
+from ddm import ddc as _ddc  # noqa: E402
+
+
+def _no_hardware(args, timeout=15):
+    raise AssertionError(f"test tried to run ddcutil {' '.join(args)}")
+
+
+_ddc._run = _no_hardware

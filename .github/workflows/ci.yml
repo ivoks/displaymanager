@@ -35,21 +35,9 @@ jobs:
         working-directory: displaymanager
         run: make check
 
-      - name: Check the GNOME Shell extension parses
+      - name: Check the GNOME Shell extension loads
         working-directory: displaymanager
-        run: |
-          ext=extension/displaymanager@ivoks.github.io
-          python3 -c "import json,sys; json.load(open('$ext/metadata.json'))"
-          # Replace Shell-only imports with stubs so gjs can load the module.
-          sed -e "s|^import Meta from 'gi://Meta';|const Meta = {};|" \
-              -e "s|^import Shell from 'gi://Shell';|const Shell = {};|" \
-              -e "s|^import \* as Main from .*|const Main = {};|" \
-              -e "s|^import \* as Layout from .*|const Layout = {};|" \
-              -e "s|^import {Extension} from .*|class Extension {}|" \
-              -e "s|^export default class|class|" \
-              $ext/extension.js > /tmp/extension-check.js
-          echo "new EdgeSwitchExtension(); Gio.DBusNodeInfo.new_for_xml(DBUS_INTERFACE);" >> /tmp/extension-check.js
-          gjs -m /tmp/extension-check.js
+        run: sh tests/check-extension.sh
 
       - name: Build package
         working-directory: displaymanager

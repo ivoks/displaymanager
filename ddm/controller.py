@@ -122,6 +122,7 @@ DEFAULTS = {
     "panel_width": 5120,        # native width, for telling PBP sides apart
     "edge_switch": False,       # move the KVM when the pointer hits the edge
     "osd": True,                # on-screen pop-up for shortcut/edge actions
+    "quick_settings": True,     # "Monitor" tile in GNOME Quick Settings
     "connector": None,          # e.g. "DP-1"; read by the GNOME extension
     # USB devices that live behind the monitor's KVM-switched hub; if any is
     # present on this machine, the keyboard/mouse are here.  (U4025QW:
@@ -458,7 +459,7 @@ class Controller:
         self.set_input(target)
         return _("Switched to {input}").format(input=self.input_label(target))
 
-    def status(self) -> Status:
+    def status(self, levels: bool = True) -> Status:
         st = Status()
         try:
             st.input = self.get_input()
@@ -481,7 +482,7 @@ class Controller:
             pass
         st.usb_here = self.usb_here()
         st.levels = {}
-        for name in LEVELS:
+        for name in (LEVELS if levels else ()):
             try:
                 st.levels[name] = self.get_level(name)
             except ddc.DDCError:

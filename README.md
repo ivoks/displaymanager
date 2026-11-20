@@ -103,6 +103,14 @@ Thunderbolt domain) and the keyboard/mouse are plugged into the monitor's
 downstream ports. Assign the upstream to the matching video input in the
 monitor's OSD (USB settings / PBP USB switch).
 
+## Quick Settings
+
+The DisplayManager extension adds a **Monitor** tile to GNOME's Quick
+Settings (top-right menu). The tile shows the current layout and turns side
+by side on or off; its menu lists the layouts and can move the keyboard and
+mouse, swap the inputs or open the app. Turn it off on the Shortcuts tab.
+The menu reads the monitor through `displaymanager state --json`.
+
 ## On-screen feedback
 
 Actions from keyboard shortcuts or the screen edge show GNOME's own

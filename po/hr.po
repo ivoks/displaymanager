@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: displaymanager 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/ivoks/displaymanager/issues\n"
-"POT-Creation-Date: 2026-11-20 10:37+0100\n"
+"POT-Creation-Date: 2026-11-20 10:50+0100\n"
 "PO-Revision-Date: 2026-11-20 08:55+0100\n"
 "Last-Translator: Ante Karamatic <ante@dlivio.com>\n"
 "Language-Team: Croatian\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: ddm/cli.py:25
+#: ddm/cli.py:49
 msgid ""
 "Control a monitor's inputs, screen layout and KVM over DDC/CI. Run without "
 "arguments for the graphical application."
@@ -26,15 +26,19 @@ msgstr ""
 "Upravljanje ulazima, rasporedom zaslona i KVM-om monitora putem DDC/CI. "
 "Pokrenite bez argumenata za grafičku aplikaciju."
 
-#: ddm/cli.py:29
+#: ddm/cli.py:53
 msgid "don't show a desktop notification"
 msgstr "ne prikazuj obavijest na radnoj površini"
 
-#: ddm/cli.py:31
+#: ddm/cli.py:55
 msgid "show the monitor's state"
 msgstr "prikaži stanje monitora"
 
-#: ddm/cli.py:32
+#: ddm/cli.py:56
+msgid "machine-readable state, for the GNOME Quick Settings menu"
+msgstr "stanje u strojno čitljivom obliku, za izbornik Brze postavke u GNOME-u"
+
+#: ddm/cli.py:59
 msgid ""
 "with two inputs on screen move the keyboard and mouse, otherwise switch the "
 "full-screen input"
@@ -42,20 +46,20 @@ msgstr ""
 "s dva ulaza na zaslonu premjesti tipkovnicu i miš, inače promijeni ulaz "
 "prikazan preko cijelog zaslona"
 
-#: ddm/cli.py:35
+#: ddm/cli.py:62
 msgid "keyboard and mouse: here, away or toggle"
 msgstr ""
 "tipkovnica i miš: here (ovamo), away (na drugo računalo) ili toggle (prebaci)"
 
-#: ddm/cli.py:39
+#: ddm/cli.py:66
 msgid "swap the two inputs"
 msgstr "zamijeni dva ulaza"
 
-#: ddm/cli.py:40
+#: ddm/cli.py:67
 msgid "side by side: on (last used layout), off or toggle"
 msgstr "jedan pored drugog: on (zadnji korišteni raspored), off ili toggle"
 
-#: ddm/cli.py:44
+#: ddm/cli.py:71
 msgid ""
 "screen layout: list, next, or a name (single, 50-50, 75-25, 80-20, 25-75, "
 "20-80, pip-small, pip-large)"
@@ -63,32 +67,32 @@ msgstr ""
 "raspored zaslona: list, next ili naziv (single, 50-50, 75-25, 80-20, 25-75, "
 "20-80, pip-small, pip-large)"
 
-#: ddm/cli.py:47
+#: ddm/cli.py:74
 msgid "select the main input by hex code, e.g. 0x0f"
 msgstr "odaberi glavni ulaz heksadecimalnim kodom, npr. 0x0f"
 
-#: ddm/cli.py:50
+#: ddm/cli.py:77
 msgid "select the second input (right side or inset) by hex code, e.g. 0x19"
 msgstr ""
 "odaberi drugi ulaz (desna strana ili umetak) heksadecimalnim kodom, npr. 0x19"
 
-#: ddm/cli.py:54
+#: ddm/cli.py:81
 msgid "show or set brightness: 0–100, +N or -N"
 msgstr "prikaži ili postavi svjetlinu: 0–100, +N ili -N"
 
-#: ddm/cli.py:55
+#: ddm/cli.py:82
 msgid "show or set contrast: 0–100, +N or -N"
 msgstr "prikaži ili postavi kontrast: 0–100, +N ili -N"
 
-#: ddm/cli.py:56
+#: ddm/cli.py:83
 msgid "show or set the speaker volume: 0–100, +N or -N"
 msgstr "prikaži ili postavi glasnoću zvučnika: 0–100, +N ili -N"
 
-#: ddm/cli.py:60
+#: ddm/cli.py:87
 msgid "list the inputs the monitor reports"
 msgstr "prikaži ulaze koje monitor prijavljuje"
 
-#: ddm/cli.py:61
+#: ddm/cli.py:88
 msgid ""
 "the pointer reached this screen edge: move the keyboard and mouse if the "
 "other computer is on that side (used by the GNOME extension)"
@@ -96,111 +100,111 @@ msgstr ""
 "pokazivač je došao do ovog ruba zaslona: premjesti tipkovnicu i miš ako je "
 "drugo računalo s te strane (koristi GNOME proširenje)"
 
-#: ddm/cli.py:66
+#: ddm/cli.py:93
 msgid "work out which input this computer is plugged into"
 msgstr "utvrdi na koji je ulaz priključeno ovo računalo"
 
-#: ddm/cli.py:77
+#: ddm/cli.py:107
 msgid "Monitor:"
 msgstr "Monitor:"
 
-#: ddm/cli.py:79
+#: ddm/cli.py:109
 msgid "Input:"
 msgstr "Ulaz:"
 
-#: ddm/cli.py:83
+#: ddm/cli.py:113
 msgid "Layout:"
 msgstr "Raspored:"
 
-#: ddm/cli.py:84 ddm/cli.py:86 ddm/cli.py:97
+#: ddm/cli.py:114 ddm/cli.py:116 ddm/cli.py:127
 msgid "unknown"
 msgstr "nepoznato"
 
-#: ddm/cli.py:88
+#: ddm/cli.py:118
 msgid "Second input:"
 msgstr "Drugi ulaz:"
 
-#: ddm/cli.py:95
+#: ddm/cli.py:125
 msgid "Keyboard & mouse:"
 msgstr "Tipkovnica i miš:"
 
-#: ddm/cli.py:96
+#: ddm/cli.py:126
 msgid "this computer"
 msgstr "ovo računalo"
 
-#: ddm/cli.py:96
+#: ddm/cli.py:126
 msgid "other computer"
 msgstr "drugo računalo"
 
-#: ddm/cli.py:98
+#: ddm/cli.py:128
 msgid "This computer:"
 msgstr "Ovo računalo:"
 
-#: ddm/cli.py:99
+#: ddm/cli.py:129
 msgid "Other computer:"
 msgstr "Drugo računalo:"
 
-#: ddm/cli.py:102
+#: ddm/cli.py:132
 msgid "not set"
 msgstr "nije postavljeno"
 
-#: ddm/cli.py:108
+#: ddm/cli.py:138
 #, python-brace-format
 msgid "Could not tell: {reason}"
 msgstr "Nije moguće utvrditi: {reason}"
 
-#: ddm/cli.py:110
+#: ddm/cli.py:140
 #, python-brace-format
 msgid "This computer: {input} ({code}) [{reason}]"
 msgstr "Ovo računalo: {input} ({code}) [{reason}]"
 
-#: ddm/cli.py:126
+#: ddm/cli.py:156
 #, python-brace-format
 msgid "error: “{value}” is not a number, +N or -N"
 msgstr "greška: „{value}” nije broj, +N ni -N"
 
-#: ddm/cli.py:145 ddm/controller.py:450 ddm/gui.py:441
+#: ddm/cli.py:175 ddm/controller.py:451 ddm/gui.py:448
 msgid "Toggled keyboard and mouse"
 msgstr "Tipkovnica i miš su prebačeni"
 
-#: ddm/cli.py:152 ddm/gui.py:133
+#: ddm/cli.py:182 ddm/gui.py:133
 msgid "Swapped the inputs"
 msgstr "Ulazi su zamijenjeni"
 
-#: ddm/cli.py:156
+#: ddm/cli.py:186
 msgid "Side by side on"
 msgstr "Prikaz jedan pored drugog je uključen"
 
-#: ddm/cli.py:156
+#: ddm/cli.py:186
 msgid "Side by side off"
 msgstr "Prikaz jedan pored drugog je isključen"
 
-#: ddm/cli.py:172
+#: ddm/cli.py:202
 #, python-brace-format
 msgid "error: unknown layout “{name}”; try “layout list”"
 msgstr "greška: nepoznat raspored „{name}”; pokušajte „layout list”"
 
-#: ddm/cli.py:176 ddm/gui.py:504
+#: ddm/cli.py:206 ddm/gui.py:517
 #, python-brace-format
 msgid "Layout: {layout}"
 msgstr "Raspored: {layout}"
 
-#: ddm/cli.py:180 ddm/controller.py:459
+#: ddm/cli.py:210 ddm/controller.py:460
 #, python-brace-format
 msgid "Switched to {input}"
 msgstr "Prebačeno na {input}"
 
-#: ddm/cli.py:184 ddm/gui.py:532
+#: ddm/cli.py:214 ddm/gui.py:545
 #, python-brace-format
 msgid "Second input: {input}"
 msgstr "Drugi ulaz: {input}"
 
-#: ddm/cli.py:193
+#: ddm/cli.py:226
 #, python-brace-format
 msgid "error: {message}"
 msgstr "greška: {message}"
 
-#: ddm/cli.py:195
+#: ddm/cli.py:228
 #, python-brace-format
 msgid "Error: {message}"
 msgstr "Greška: {message}"
@@ -249,59 +253,59 @@ msgstr "Kontrast"
 msgid "Volume"
 msgstr "Glasnoća"
 
-#: ddm/controller.py:190
+#: ddm/controller.py:191
 msgid "No monitor found on any display connector"
 msgstr "Ni na jednom priključku zaslona nije pronađen monitor"
 
-#: ddm/controller.py:237
+#: ddm/controller.py:238
 #, python-brace-format
 msgid "Input {code}"
 msgstr "Ulaz {code}"
 
-#: ddm/controller.py:254
+#: ddm/controller.py:255
 #, python-brace-format
 msgid "connected via {connector}"
 msgstr "priključeno preko {connector}"
 
-#: ddm/controller.py:260
+#: ddm/controller.py:261
 msgid "no Thunderbolt/USB-C video link"
 msgstr "nema Thunderbolt/USB-C video veze"
 
-#: ddm/controller.py:269
+#: ddm/controller.py:270
 msgid "on screen"
 msgstr "na zaslonu"
 
-#: ddm/controller.py:280
+#: ddm/controller.py:281
 #, python-brace-format
 msgid "{width} px wide in {layout}"
 msgstr "{width} px široko u rasporedu {layout}"
 
-#: ddm/controller.py:284
+#: ddm/controller.py:285
 msgid "none"
 msgstr "nijedan"
 
-#: ddm/controller.py:285
+#: ddm/controller.py:286
 #, python-brace-format
 msgid "could be any of: {inputs}"
 msgstr "može biti bilo koji od: {inputs}"
 
-#: ddm/controller.py:389
+#: ddm/controller.py:390
 msgid "Keyboard and mouse are already here"
 msgstr "Tipkovnica i miš su već ovdje"
 
-#: ddm/controller.py:390
+#: ddm/controller.py:391
 msgid "Keyboard and mouse are already on the other computer"
 msgstr "Tipkovnica i miš su već na drugom računalu"
 
-#: ddm/controller.py:398
+#: ddm/controller.py:399
 msgid "Keyboard and mouse moved here"
 msgstr "Tipkovnica i miš su premješteni ovamo"
 
-#: ddm/controller.py:399
+#: ddm/controller.py:400
 msgid "Keyboard and mouse moved to the other computer"
 msgstr "Tipkovnica i miš su premješteni na drugo računalo"
 
-#: ddm/controller.py:454
+#: ddm/controller.py:455
 msgid "Set “This Computer” and “Other Computer” in the app first"
 msgstr "Najprije u aplikaciji postavite „Ovo računalo” i „Drugo računalo”"
 
@@ -346,7 +350,7 @@ msgstr "Traženje monitora…"
 msgid "Switch"
 msgstr "Prebacivanje"
 
-#: ddm/gui.py:83 ddm/gui.py:425
+#: ddm/gui.py:83 ddm/gui.py:432
 msgid "Switch Computer"
 msgstr "Promijeni računalo"
 
@@ -354,7 +358,7 @@ msgstr "Promijeni računalo"
 msgid "Keyboard & Mouse"
 msgstr "Tipkovnica i miš"
 
-#: ddm/gui.py:92 ddm/gui.py:422
+#: ddm/gui.py:92 ddm/gui.py:429
 msgid "Hand the monitor’s USB hub to the other computer"
 msgstr "Predaj USB razdjelnik monitora drugom računalu"
 
@@ -461,23 +465,35 @@ msgid ""
 msgstr ""
 "Kad prečac ili rub zaslona nešto promijeni; inače se prikazuje obavijest"
 
-#: ddm/gui.py:215
+#: ddm/gui.py:210
+msgid "Show in Quick Settings"
+msgstr "Prikaži u Brzim postavkama"
+
+#: ddm/gui.py:211
+msgid ""
+"A Monitor tile in GNOME’s Quick Settings to pick a layout, move the keyboard "
+"and mouse or swap inputs"
+msgstr ""
+"Pločica Monitor u GNOME Brzim postavkama za odabir rasporeda, premještanje "
+"tipkovnice i miša ili zamjenu ulaza"
+
+#: ddm/gui.py:222
 msgid "Layouts"
 msgstr "Rasporedi"
 
-#: ddm/gui.py:216
+#: ddm/gui.py:223
 msgid "Jump straight to a screen layout"
 msgstr "Izravno prijeđi na raspored zaslona"
 
-#: ddm/gui.py:218
+#: ddm/gui.py:225
 msgid "Enable All"
 msgstr "Omogući sve"
 
-#: ddm/gui.py:231
+#: ddm/gui.py:238
 msgid "Raw VCP Access"
 msgstr "Izravan VCP pristup"
 
-#: ddm/gui.py:232
+#: ddm/gui.py:239
 msgid ""
 "Read or write any DDC/CI feature, e.g. to probe manufacturer-specific codes. "
 "Writing the wrong value can change monitor settings."
@@ -486,39 +502,39 @@ msgstr ""
 "specifičnih za proizvođača. Zapisivanje pogrešne vrijednosti može "
 "promijeniti postavke monitora."
 
-#: ddm/gui.py:235
+#: ddm/gui.py:242
 msgid "Feature code (hex, e.g. E7)"
 msgstr "Kod značajke (heksadecimalno, npr. E7)"
 
-#: ddm/gui.py:236
+#: ddm/gui.py:243
 msgid "Value (hex, for Set)"
 msgstr "Vrijednost (heksadecimalno, za Postavi)"
 
-#: ddm/gui.py:237
+#: ddm/gui.py:244
 msgid "Result"
 msgstr "Rezultat"
 
-#: ddm/gui.py:240
+#: ddm/gui.py:247
 msgid "Get"
 msgstr "Dohvati"
 
-#: ddm/gui.py:240
+#: ddm/gui.py:247
 msgid "Set"
 msgstr "Postavi"
 
-#: ddm/gui.py:258
+#: ddm/gui.py:265
 msgid "Full screen"
 msgstr "Cijeli zaslon"
 
-#: ddm/gui.py:259
+#: ddm/gui.py:266
 msgid "Picture in picture"
 msgstr "Slika u slici"
 
-#: ddm/gui.py:335
+#: ddm/gui.py:342
 msgid "Done"
 msgstr "Gotovo"
 
-#: ddm/gui.py:343
+#: ddm/gui.py:350
 msgid ""
 "No access to the monitor’s I2C bus. Run “sudo usermod -aG i2c $USER”, then "
 "log out and back in."
@@ -526,104 +542,104 @@ msgstr ""
 "Nema pristupa I2C sabirnici monitora. Pokrenite „sudo usermod -aG i2c "
 "$USER”, zatim se odjavite i ponovno prijavite."
 
-#: ddm/gui.py:360
+#: ddm/gui.py:367
 msgid "Monitor not reachable"
 msgstr "Monitor nije dostupan"
 
-#: ddm/gui.py:406
+#: ddm/gui.py:413
 #, python-brace-format
 msgid "Serial {serial}"
 msgstr "Serijski broj {serial}"
 
-#: ddm/gui.py:409
+#: ddm/gui.py:416
 #, python-brace-format
 msgid "Showing {input}"
 msgstr "Prikazuje {input}"
 
-#: ddm/gui.py:415
+#: ddm/gui.py:422
 #, python-brace-format
 msgid "second: {input}"
 msgstr "drugi: {input}"
 
-#: ddm/gui.py:420
+#: ddm/gui.py:427
 msgid "Connected to this computer"
 msgstr "Priključeno na ovo računalo"
 
-#: ddm/gui.py:421
+#: ddm/gui.py:428
 msgid "Connected to the other computer"
 msgstr "Priključeno na drugo računalo"
 
-#: ddm/gui.py:424
+#: ddm/gui.py:431
 msgid "Move Keyboard & Mouse"
 msgstr "Premjesti tipkovnicu i miš"
 
-#: ddm/gui.py:479
+#: ddm/gui.py:486
 msgid "Log out and back in once to finish setting up edge switching"
 msgstr ""
 "Odjavite se i ponovno prijavite kako biste dovršili postavljanje "
 "prebacivanja na rubu"
 
-#: ddm/gui.py:482
+#: ddm/gui.py:489
 msgid "GNOME Shell couldn’t enable the edge-switch extension"
 msgstr "GNOME Shell nije mogao omogućiti proširenje za prebacivanje na rubu"
 
-#: ddm/gui.py:522
+#: ddm/gui.py:535
 #, python-brace-format
 msgid "Switching to {input}"
 msgstr "Prebacivanje na {input}"
 
-#: ddm/gui.py:539
+#: ddm/gui.py:552
 #, python-brace-format
 msgid "Couldn’t tell which input this is ({reason}); choose it from the list"
 msgstr ""
 "Nije moguće utvrditi o kojem se ulazu radi ({reason}); odaberite ga s popisa"
 
-#: ddm/gui.py:543
+#: ddm/gui.py:556
 #, python-brace-format
 msgid "Detected input {code} is not in the list"
 msgstr "Otkriveni ulaz {code} nije na popisu"
 
-#: ddm/gui.py:551
+#: ddm/gui.py:564
 #, python-brace-format
 msgid "This computer: {input}"
 msgstr "Ovo računalo: {input}"
 
-#: ddm/gui.py:558
+#: ddm/gui.py:571
 msgid "Pick the other computer’s input first"
 msgstr "Najprije odaberite ulaz drugog računala"
 
-#: ddm/gui.py:582
+#: ddm/gui.py:595
 msgid "(also on the number pad)"
 msgstr "(i na numeričkoj tipkovnici)"
 
-#: ddm/gui.py:585
+#: ddm/gui.py:598
 #, python-brace-format
 msgid "already used by {users}"
 msgstr "već koristi: {users}"
 
-#: ddm/gui.py:597
+#: ddm/gui.py:610
 #, python-brace-format
 msgid "Couldn’t enable: {shortcuts}"
 msgstr "Nije moguće omogućiti: {shortcuts}"
 
-#: ddm/gui.py:599
+#: ddm/gui.py:612
 msgid "Layout shortcuts enabled"
 msgstr "Prečaci za rasporede su omogućeni"
 
-#: ddm/gui.py:618
+#: ddm/gui.py:631
 msgid "Enter a feature code in hex"
 msgstr "Unesite heksadecimalni kod značajke"
 
-#: ddm/gui.py:628
+#: ddm/gui.py:641
 #, python-brace-format
 msgid "VCP {code}: value {value}, raw {raw}"
 msgstr "VCP {code}: vrijednost {value}, sirovo {raw}"
 
-#: ddm/gui.py:642
+#: ddm/gui.py:655
 msgid "Enter a value in hex"
 msgstr "Unesite heksadecimalnu vrijednost"
 
-#: ddm/gui.py:645
+#: ddm/gui.py:658
 #, python-brace-format
 msgid "Wrote {value} to VCP {code}"
 msgstr "Zapisano {value} u VCP {code}"
@@ -671,6 +687,24 @@ msgstr "{keys} već koristi: {users}"
 #, python-brace-format
 msgid "{name} (number pad)"
 msgstr "{name} (numerička tipkovnica)"
+
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:43
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:50
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:84
+msgid "Monitor"
+msgstr "Monitor"
+
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:58
+msgid "Open DisplayManager"
+msgstr "Otvori DisplayManager"
+
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:96
+msgid "Bring Keyboard & Mouse Here"
+msgstr "Premjesti tipkovnicu i miš ovamo"
+
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:97
+msgid "Move Keyboard & Mouse to Other Computer"
+msgstr "Premjesti tipkovnicu i miš na drugo računalo"
 
 #: data/io.github.DisplayManager.desktop.in:3
 msgid "DisplayManager"

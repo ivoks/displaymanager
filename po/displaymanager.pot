@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: displaymanager 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/ivoks/displaymanager/issues\n"
-"POT-Creation-Date: 2026-11-20 10:37+0100\n"
+"POT-Creation-Date: 2026-11-20 10:50+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,179 +17,183 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ddm/cli.py:25
+#: ddm/cli.py:49
 msgid ""
 "Control a monitor's inputs, screen layout and KVM over DDC/CI. Run without "
 "arguments for the graphical application."
 msgstr ""
 
-#: ddm/cli.py:29
+#: ddm/cli.py:53
 msgid "don't show a desktop notification"
 msgstr ""
 
-#: ddm/cli.py:31
+#: ddm/cli.py:55
 msgid "show the monitor's state"
 msgstr ""
 
-#: ddm/cli.py:32
+#: ddm/cli.py:56
+msgid "machine-readable state, for the GNOME Quick Settings menu"
+msgstr ""
+
+#: ddm/cli.py:59
 msgid ""
 "with two inputs on screen move the keyboard and mouse, otherwise switch the "
 "full-screen input"
 msgstr ""
 
-#: ddm/cli.py:35
+#: ddm/cli.py:62
 msgid "keyboard and mouse: here, away or toggle"
 msgstr ""
 
-#: ddm/cli.py:39
+#: ddm/cli.py:66
 msgid "swap the two inputs"
 msgstr ""
 
-#: ddm/cli.py:40
+#: ddm/cli.py:67
 msgid "side by side: on (last used layout), off or toggle"
 msgstr ""
 
-#: ddm/cli.py:44
+#: ddm/cli.py:71
 msgid ""
 "screen layout: list, next, or a name (single, 50-50, 75-25, 80-20, 25-75, "
 "20-80, pip-small, pip-large)"
 msgstr ""
 
-#: ddm/cli.py:47
+#: ddm/cli.py:74
 msgid "select the main input by hex code, e.g. 0x0f"
 msgstr ""
 
-#: ddm/cli.py:50
+#: ddm/cli.py:77
 msgid "select the second input (right side or inset) by hex code, e.g. 0x19"
 msgstr ""
 
-#: ddm/cli.py:54
+#: ddm/cli.py:81
 msgid "show or set brightness: 0–100, +N or -N"
 msgstr ""
 
-#: ddm/cli.py:55
+#: ddm/cli.py:82
 msgid "show or set contrast: 0–100, +N or -N"
 msgstr ""
 
-#: ddm/cli.py:56
+#: ddm/cli.py:83
 msgid "show or set the speaker volume: 0–100, +N or -N"
 msgstr ""
 
-#: ddm/cli.py:60
+#: ddm/cli.py:87
 msgid "list the inputs the monitor reports"
 msgstr ""
 
-#: ddm/cli.py:61
+#: ddm/cli.py:88
 msgid ""
 "the pointer reached this screen edge: move the keyboard and mouse if the "
 "other computer is on that side (used by the GNOME extension)"
 msgstr ""
 
-#: ddm/cli.py:66
+#: ddm/cli.py:93
 msgid "work out which input this computer is plugged into"
 msgstr ""
 
-#: ddm/cli.py:77
+#: ddm/cli.py:107
 msgid "Monitor:"
 msgstr ""
 
-#: ddm/cli.py:79
+#: ddm/cli.py:109
 msgid "Input:"
 msgstr ""
 
-#: ddm/cli.py:83
+#: ddm/cli.py:113
 msgid "Layout:"
 msgstr ""
 
-#: ddm/cli.py:84 ddm/cli.py:86 ddm/cli.py:97
+#: ddm/cli.py:114 ddm/cli.py:116 ddm/cli.py:127
 msgid "unknown"
 msgstr ""
 
-#: ddm/cli.py:88
+#: ddm/cli.py:118
 msgid "Second input:"
 msgstr ""
 
-#: ddm/cli.py:95
+#: ddm/cli.py:125
 msgid "Keyboard & mouse:"
 msgstr ""
 
-#: ddm/cli.py:96
+#: ddm/cli.py:126
 msgid "this computer"
 msgstr ""
 
-#: ddm/cli.py:96
+#: ddm/cli.py:126
 msgid "other computer"
 msgstr ""
 
-#: ddm/cli.py:98
+#: ddm/cli.py:128
 msgid "This computer:"
 msgstr ""
 
-#: ddm/cli.py:99
+#: ddm/cli.py:129
 msgid "Other computer:"
 msgstr ""
 
-#: ddm/cli.py:102
+#: ddm/cli.py:132
 msgid "not set"
 msgstr ""
 
-#: ddm/cli.py:108
+#: ddm/cli.py:138
 #, python-brace-format
 msgid "Could not tell: {reason}"
 msgstr ""
 
-#: ddm/cli.py:110
+#: ddm/cli.py:140
 #, python-brace-format
 msgid "This computer: {input} ({code}) [{reason}]"
 msgstr ""
 
-#: ddm/cli.py:126
+#: ddm/cli.py:156
 #, python-brace-format
 msgid "error: “{value}” is not a number, +N or -N"
 msgstr ""
 
-#: ddm/cli.py:145 ddm/controller.py:450 ddm/gui.py:441
+#: ddm/cli.py:175 ddm/controller.py:451 ddm/gui.py:448
 msgid "Toggled keyboard and mouse"
 msgstr ""
 
-#: ddm/cli.py:152 ddm/gui.py:133
+#: ddm/cli.py:182 ddm/gui.py:133
 msgid "Swapped the inputs"
 msgstr ""
 
-#: ddm/cli.py:156
+#: ddm/cli.py:186
 msgid "Side by side on"
 msgstr ""
 
-#: ddm/cli.py:156
+#: ddm/cli.py:186
 msgid "Side by side off"
 msgstr ""
 
-#: ddm/cli.py:172
+#: ddm/cli.py:202
 #, python-brace-format
 msgid "error: unknown layout “{name}”; try “layout list”"
 msgstr ""
 
-#: ddm/cli.py:176 ddm/gui.py:504
+#: ddm/cli.py:206 ddm/gui.py:517
 #, python-brace-format
 msgid "Layout: {layout}"
 msgstr ""
 
-#: ddm/cli.py:180 ddm/controller.py:459
+#: ddm/cli.py:210 ddm/controller.py:460
 #, python-brace-format
 msgid "Switched to {input}"
 msgstr ""
 
-#: ddm/cli.py:184 ddm/gui.py:532
+#: ddm/cli.py:214 ddm/gui.py:545
 #, python-brace-format
 msgid "Second input: {input}"
 msgstr ""
 
-#: ddm/cli.py:193
+#: ddm/cli.py:226
 #, python-brace-format
 msgid "error: {message}"
 msgstr ""
 
-#: ddm/cli.py:195
+#: ddm/cli.py:228
 #, python-brace-format
 msgid "Error: {message}"
 msgstr ""
@@ -238,59 +242,59 @@ msgstr ""
 msgid "Volume"
 msgstr ""
 
-#: ddm/controller.py:190
+#: ddm/controller.py:191
 msgid "No monitor found on any display connector"
 msgstr ""
 
-#: ddm/controller.py:237
+#: ddm/controller.py:238
 #, python-brace-format
 msgid "Input {code}"
 msgstr ""
 
-#: ddm/controller.py:254
+#: ddm/controller.py:255
 #, python-brace-format
 msgid "connected via {connector}"
 msgstr ""
 
-#: ddm/controller.py:260
+#: ddm/controller.py:261
 msgid "no Thunderbolt/USB-C video link"
 msgstr ""
 
-#: ddm/controller.py:269
+#: ddm/controller.py:270
 msgid "on screen"
 msgstr ""
 
-#: ddm/controller.py:280
+#: ddm/controller.py:281
 #, python-brace-format
 msgid "{width} px wide in {layout}"
 msgstr ""
 
-#: ddm/controller.py:284
+#: ddm/controller.py:285
 msgid "none"
 msgstr ""
 
-#: ddm/controller.py:285
+#: ddm/controller.py:286
 #, python-brace-format
 msgid "could be any of: {inputs}"
 msgstr ""
 
-#: ddm/controller.py:389
+#: ddm/controller.py:390
 msgid "Keyboard and mouse are already here"
 msgstr ""
 
-#: ddm/controller.py:390
+#: ddm/controller.py:391
 msgid "Keyboard and mouse are already on the other computer"
 msgstr ""
 
-#: ddm/controller.py:398
+#: ddm/controller.py:399
 msgid "Keyboard and mouse moved here"
 msgstr ""
 
-#: ddm/controller.py:399
+#: ddm/controller.py:400
 msgid "Keyboard and mouse moved to the other computer"
 msgstr ""
 
-#: ddm/controller.py:454
+#: ddm/controller.py:455
 msgid "Set “This Computer” and “Other Computer” in the app first"
 msgstr ""
 
@@ -335,7 +339,7 @@ msgstr ""
 msgid "Switch"
 msgstr ""
 
-#: ddm/gui.py:83 ddm/gui.py:425
+#: ddm/gui.py:83 ddm/gui.py:432
 msgid "Switch Computer"
 msgstr ""
 
@@ -343,7 +347,7 @@ msgstr ""
 msgid "Keyboard & Mouse"
 msgstr ""
 
-#: ddm/gui.py:92 ddm/gui.py:422
+#: ddm/gui.py:92 ddm/gui.py:429
 msgid "Hand the monitor’s USB hub to the other computer"
 msgstr ""
 
@@ -445,161 +449,171 @@ msgid ""
 "notification is shown"
 msgstr ""
 
-#: ddm/gui.py:215
+#: ddm/gui.py:210
+msgid "Show in Quick Settings"
+msgstr ""
+
+#: ddm/gui.py:211
+msgid ""
+"A Monitor tile in GNOME’s Quick Settings to pick a layout, move the keyboard "
+"and mouse or swap inputs"
+msgstr ""
+
+#: ddm/gui.py:222
 msgid "Layouts"
 msgstr ""
 
-#: ddm/gui.py:216
+#: ddm/gui.py:223
 msgid "Jump straight to a screen layout"
 msgstr ""
 
-#: ddm/gui.py:218
+#: ddm/gui.py:225
 msgid "Enable All"
 msgstr ""
 
-#: ddm/gui.py:231
+#: ddm/gui.py:238
 msgid "Raw VCP Access"
 msgstr ""
 
-#: ddm/gui.py:232
+#: ddm/gui.py:239
 msgid ""
 "Read or write any DDC/CI feature, e.g. to probe manufacturer-specific codes. "
 "Writing the wrong value can change monitor settings."
 msgstr ""
 
-#: ddm/gui.py:235
+#: ddm/gui.py:242
 msgid "Feature code (hex, e.g. E7)"
 msgstr ""
 
-#: ddm/gui.py:236
+#: ddm/gui.py:243
 msgid "Value (hex, for Set)"
 msgstr ""
 
-#: ddm/gui.py:237
+#: ddm/gui.py:244
 msgid "Result"
 msgstr ""
 
-#: ddm/gui.py:240
+#: ddm/gui.py:247
 msgid "Get"
 msgstr ""
 
-#: ddm/gui.py:240
+#: ddm/gui.py:247
 msgid "Set"
 msgstr ""
 
-#: ddm/gui.py:258
+#: ddm/gui.py:265
 msgid "Full screen"
 msgstr ""
 
-#: ddm/gui.py:259
+#: ddm/gui.py:266
 msgid "Picture in picture"
 msgstr ""
 
-#: ddm/gui.py:335
+#: ddm/gui.py:342
 msgid "Done"
 msgstr ""
 
-#: ddm/gui.py:343
+#: ddm/gui.py:350
 msgid ""
 "No access to the monitor’s I2C bus. Run “sudo usermod -aG i2c $USER”, then "
 "log out and back in."
 msgstr ""
 
-#: ddm/gui.py:360
+#: ddm/gui.py:367
 msgid "Monitor not reachable"
 msgstr ""
 
-#: ddm/gui.py:406
+#: ddm/gui.py:413
 #, python-brace-format
 msgid "Serial {serial}"
 msgstr ""
 
-#: ddm/gui.py:409
+#: ddm/gui.py:416
 #, python-brace-format
 msgid "Showing {input}"
 msgstr ""
 
-#: ddm/gui.py:415
+#: ddm/gui.py:422
 #, python-brace-format
 msgid "second: {input}"
 msgstr ""
 
-#: ddm/gui.py:420
+#: ddm/gui.py:427
 msgid "Connected to this computer"
 msgstr ""
 
-#: ddm/gui.py:421
+#: ddm/gui.py:428
 msgid "Connected to the other computer"
 msgstr ""
 
-#: ddm/gui.py:424
+#: ddm/gui.py:431
 msgid "Move Keyboard & Mouse"
 msgstr ""
 
-#: ddm/gui.py:479
+#: ddm/gui.py:486
 msgid "Log out and back in once to finish setting up edge switching"
 msgstr ""
 
-#: ddm/gui.py:482
+#: ddm/gui.py:489
 msgid "GNOME Shell couldn’t enable the edge-switch extension"
 msgstr ""
 
-#: ddm/gui.py:522
+#: ddm/gui.py:535
 #, python-brace-format
 msgid "Switching to {input}"
 msgstr ""
 
-#: ddm/gui.py:539
+#: ddm/gui.py:552
 #, python-brace-format
 msgid "Couldn’t tell which input this is ({reason}); choose it from the list"
 msgstr ""
 
-#: ddm/gui.py:543
+#: ddm/gui.py:556
 #, python-brace-format
 msgid "Detected input {code} is not in the list"
 msgstr ""
 
-#: ddm/gui.py:551
+#: ddm/gui.py:564
 #, python-brace-format
 msgid "This computer: {input}"
 msgstr ""
 
-#: ddm/gui.py:558
+#: ddm/gui.py:571
 msgid "Pick the other computer’s input first"
 msgstr ""
 
-#: ddm/gui.py:582
+#: ddm/gui.py:595
 msgid "(also on the number pad)"
 msgstr ""
 
-#: ddm/gui.py:585
+#: ddm/gui.py:598
 #, python-brace-format
 msgid "already used by {users}"
 msgstr ""
 
-#: ddm/gui.py:597
+#: ddm/gui.py:610
 #, python-brace-format
 msgid "Couldn’t enable: {shortcuts}"
 msgstr ""
 
-#: ddm/gui.py:599
+#: ddm/gui.py:612
 msgid "Layout shortcuts enabled"
 msgstr ""
 
-#: ddm/gui.py:618
+#: ddm/gui.py:631
 msgid "Enter a feature code in hex"
 msgstr ""
 
-#: ddm/gui.py:628
+#: ddm/gui.py:641
 #, python-brace-format
 msgid "VCP {code}: value {value}, raw {raw}"
 msgstr ""
 
-#: ddm/gui.py:642
+#: ddm/gui.py:655
 msgid "Enter a value in hex"
 msgstr ""
 
-#: ddm/gui.py:645
+#: ddm/gui.py:658
 #, python-brace-format
 msgid "Wrote {value} to VCP {code}"
 msgstr ""
@@ -646,6 +660,24 @@ msgstr ""
 #: ddm/shortcuts.py:169
 #, python-brace-format
 msgid "{name} (number pad)"
+msgstr ""
+
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:43
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:50
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:84
+msgid "Monitor"
+msgstr ""
+
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:58
+msgid "Open DisplayManager"
+msgstr ""
+
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:96
+msgid "Bring Keyboard & Mouse Here"
+msgstr ""
+
+#: extension/displaymanager@ivoks.github.io/quickmenu.js:97
+msgid "Move Keyboard & Mouse to Other Computer"
 msgstr ""
 
 #: data/io.github.DisplayManager.desktop.in:3

@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 
 from . import ddc, osd
@@ -19,6 +20,29 @@ def _table(rows: list[tuple[str, str]]) -> None:
         print(f"{label:{width}}{value}")
 
 
+def _state(ctl: Controller) -> dict:
+    """Everything the Quick Settings menu shows, with translated titles."""
+    ctl.connect()
+    st = ctl.status(levels=False)
+    if st.error:
+        raise ddc.DDCError(st.error)
+    current = LAYOUT_BY_CODE.get(st.pxp_raw)
+    layouts = [{"key": lay.key, "title": lay.title, "kind": lay.kind}
+               for lay in ctl.supported_layouts()]
+    return {
+        "model": ctl.monitor.model,
+        "layout": current.key if current else None,
+        "layout_title": current.title if current else None,
+        "multi": bool(current and current.kind != "single"),
+        "layouts": layouts,
+        "usb_here": st.usb_here,
+        "main_input": ctl.input_label(st.input) if st.input is not None
+        else None,
+        "second_input": ctl.input_label(st.right_input)
+        if st.right_input is not None else None,
+    }
+
+
 def main(argv: list[str]) -> int:
     p = argparse.ArgumentParser(
         prog="displaymanager",
@@ -29,6 +53,9 @@ def main(argv: list[str]) -> int:
                    help=_("don't show a desktop notification"))
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("status", help=_("show the monitor's state"))
+    s = sub.add_parser("state", help=_("machine-readable state, for the "
+                                       "GNOME Quick Settings menu"))
+    s.add_argument("--json", action="store_true", required=True)
     sub.add_parser("switch", help=_("with two inputs on screen move the "
                                     "keyboard and mouse, otherwise switch "
                                     "the full-screen input"))
@@ -69,6 +96,9 @@ def main(argv: list[str]) -> int:
 
     ctl = Controller()
     try:
+        if a.cmd == "state":
+            print(json.dumps(_state(ctl), ensure_ascii=False))
+            return 0
         mon = ctl.connect()
         msg = None
         icon, level = osd.ICON_DISPLAY, None
@@ -190,6 +220,9 @@ def main(argv: list[str]) -> int:
             osd.feedback(msg, icon, level, ctl.cfg.get("osd", True))
         return 0
     except ddc.DDCError as e:
+        if a.cmd == "state":
+            print(json.dumps({"error": str(e)}, ensure_ascii=False))
+            return 1
         print(_("error: {message}").format(message=e), file=sys.stderr)
         if not a.quiet:
             osd.notify(_("Error: {message}").format(message=e))

@@ -5,5 +5,6 @@ ddm/ddc.py
 ddm/edge.py
 ddm/gui.py
 ddm/shortcuts.py
+extension/displaymanager@ivoks.github.io/quickmenu.js
 data/io.github.DisplayManager.desktop.in
 ddm/osd.py

@@ -18,6 +18,7 @@ class FakeMonitor(C.Controller):
         self.left, self.right, self.layout = left, right, layout
         self.cfg["this_input"] = this
         self.cfg["inputs"] = [0x0F, 0x11, 0x19]
+        self.cfg["layouts"] = [lay.code for lay in C.LAYOUTS]
         self._usb = usb_here
         self.width = width
         self.usb_moves = []
@@ -26,6 +27,7 @@ class FakeMonitor(C.Controller):
     def get_right_input(self): return self.right
     def get_pxp(self): return self.layout
     def usb_here(self): return self._usb
+    def get_usb(self): return 0xBC00
     def _current_width(self): return self.width
 
     def set_usb(self, here, wait=6.0):

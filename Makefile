@@ -20,6 +20,7 @@ LOCALEDIR = $(DATADIR)/locale
 
 LINGUAS  := $(shell grep -v '^\#' po/LINGUAS)
 PY_SRC   := $(shell grep '\.py$$' po/POTFILES)
+JS_SRC   := $(shell grep '\.js$$' po/POTFILES)
 MO_FILES := $(foreach l,$(LINGUAS),build/locale/$(l)/LC_MESSAGES/$(DOMAIN).mo)
 DESKTOP   = build/$(APP_ID).desktop
 
@@ -41,8 +42,10 @@ pot:
 		--msgid-bugs-address=https://github.com/ivoks/displaymanager/issues \
 		--add-comments=TRANSLATORS: \
 		-o build/python.pot $(PY_SRC)
+	xgettext --from-code=UTF-8 --language=JavaScript --keyword=_ \
+		-o build/js.pot $(JS_SRC)
 	xgettext --language=Desktop -o build/desktop.pot data/$(APP_ID).desktop.in
-	msgcat --use-first -o po/$(DOMAIN).pot build/python.pot build/desktop.pot
+	msgcat --use-first -o po/$(DOMAIN).pot build/python.pot build/js.pot build/desktop.pot
 
 update-po: pot
 	for l in $(LINGUAS); do msgmerge --update --backup=none po/$$l.po po/$(DOMAIN).pot; done
@@ -52,6 +55,7 @@ check: all
 	for l in $(LINGUAS); do msgfmt --check -o /dev/null po/$$l.po; done
 	if command -v desktop-file-validate >/dev/null; then \
 		desktop-file-validate $(DESKTOP); fi
+	if command -v gjs >/dev/null; then sh tests/check-extension.sh; fi
 
 install: all
 	install -d $(DESTDIR)$(APPDIR)/ddm $(DESTDIR)$(PREFIX)/bin
@@ -64,7 +68,7 @@ install: all
 	install -D -m 644 data/icons/$(APP_ID)-symbolic.svg \
 		$(DESTDIR)$(DATADIR)/icons/hicolor/symbolic/apps/$(APP_ID)-symbolic.svg
 	install -d $(DESTDIR)$(DATADIR)/gnome-shell/extensions/$(EXT_UUID)
-	install -m 644 extension/$(EXT_UUID)/metadata.json extension/$(EXT_UUID)/extension.js \
+	install -m 644 extension/$(EXT_UUID)/metadata.json extension/$(EXT_UUID)/*.js \
 		$(DESTDIR)$(DATADIR)/gnome-shell/extensions/$(EXT_UUID)/
 	for l in $(LINGUAS); do \
 		install -D -m 644 build/locale/$$l/LC_MESSAGES/$(DOMAIN).mo \

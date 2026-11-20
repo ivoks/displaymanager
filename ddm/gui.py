@@ -206,6 +206,13 @@ class Window(Adw.ApplicationWindow):
             active=bool(self.ctl.cfg.get("osd", True)))
         self.osd_row.connect("notify::active", self.on_osd_switch)
         g.add(self.osd_row)
+        self.qs_row = Adw.SwitchRow(
+            title=_("Show in Quick Settings"),
+            subtitle=_("A Monitor tile in GNOME’s Quick Settings to pick a "
+                       "layout, move the keyboard and mouse or swap inputs"),
+            active=bool(self.ctl.cfg.get("quick_settings", True)))
+        self.qs_row.connect("notify::active", self.on_qs_switch)
+        g.add(self.qs_row)
         for key, (_title, _cmd, default) in shortcuts.ACTIONS.items():
             if key in shortcuts.LAYOUT_ACTIONS:
                 continue
@@ -485,11 +492,17 @@ class Window(Adw.ApplicationWindow):
 
     def _extension_wanted(self) -> bool:
         cfg = self.ctl.cfg
-        return bool(cfg.get("edge_switch") or cfg.get("osd", True))
+        return bool(cfg.get("edge_switch") or cfg.get("osd", True)
+                    or cfg.get("quick_settings", True))
 
     def on_osd_switch(self, row, _p):
         self.ctl.cfg["osd"] = row.get_active()
         save_config(self.ctl.cfg)
+        self.bg(lambda: edge.set_enabled(self._extension_wanted()))
+
+    def on_qs_switch(self, row, _p):
+        self.ctl.cfg["quick_settings"] = row.get_active()
+        save_config(self.ctl.cfg)       # the extension watches this file
         self.bg(lambda: edge.set_enabled(self._extension_wanted()))
 
     def _sync_extension(self):
