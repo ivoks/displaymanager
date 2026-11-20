@@ -14,8 +14,6 @@ Depends: ${misc:Depends}, ${python3:Depends},
          gir1.2-gtk-4.0,
          gir1.2-adw-1 (>= 1.6)
 Recommends: gnome-settings-daemon
-Conflicts: dell-display-manager
-Replaces: dell-display-manager
 Description: switch inputs, Picture-by-Picture and KVM on Dell monitors
  A GTK 4 / libadwaita application and command line tool that controls Dell
  monitors over DDC/CI, providing on GNOME what Dell Display and Peripheral

@@ -15,16 +15,6 @@ from . import ddc
 _XDG_CONFIG = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
 CONFIG_DIR = os.path.join(_XDG_CONFIG, "displaymanager")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
-LEGACY_CONFIG_DIR = os.path.join(_XDG_CONFIG, "dell-display-manager")
-
-
-def _migrate_legacy_config() -> None:
-    """Carry settings over from the pre-rename config directory."""
-    if not os.path.exists(CONFIG_DIR) and os.path.isdir(LEGACY_CONFIG_DIR):
-        try:
-            os.rename(LEGACY_CONFIG_DIR, CONFIG_DIR)
-        except OSError:
-            pass
 
 # MCCS standard input codes (VCP 0x60) plus the values Dell uses.
 INPUT_NAMES = {
@@ -95,7 +85,6 @@ DEFAULTS = {
 
 
 def load_config() -> dict:
-    _migrate_legacy_config()
     cfg = json.loads(json.dumps(DEFAULTS))
     try:
         with open(CONFIG_FILE) as f:

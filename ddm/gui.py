@@ -22,10 +22,6 @@ class Window(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application):
         super().__init__(application=app, title="DisplayManager",
                          default_width=520, default_height=760)
-        try:
-            shortcuts.migrate_legacy()
-        except Exception:  # noqa: BLE001
-            pass
         self.ctl = Controller()
         self.inputs: list[int] = []
         self._updating = False

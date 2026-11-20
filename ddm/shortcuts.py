@@ -16,7 +16,6 @@ SCHEMA = "org.gnome.settings-daemon.plugins.media-keys"
 CHILD = SCHEMA + ".custom-keybinding"
 BASE = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/"
 PREFIX = "displaymanager-"
-LEGACY_PREFIX = "dell-display-manager-"
 
 # id -> (human name, CLI sub-command, default accelerator)
 ACTIONS = {
@@ -85,28 +84,4 @@ def set(action: str, accel: str | None) -> None:
             for k in ("name", "command", "binding"):
                 c.reset(k)
     root.set_strv("custom-keybindings", paths)
-    Gio.Settings.sync()
-
-
-def migrate_legacy() -> None:
-    """Re-create shortcuts installed under the pre-rename name, keeping the
-    user's chosen keys, and drop the old entries."""
-    if not _available():
-        return
-    root = Gio.Settings.new(SCHEMA)
-    paths = list(root.get_strv("custom-keybindings"))
-    old = [p for p in paths if p.startswith(BASE + LEGACY_PREFIX)]
-    if not old:
-        return
-    for path in old:
-        action = path[len(BASE + LEGACY_PREFIX):].rstrip("/")
-        c = _child(path)
-        accel = c.get_string("binding")
-        for k in ("name", "command", "binding"):
-            c.reset(k)
-        paths.remove(path)
-        root.set_strv("custom-keybindings", paths)
-        if action in ACTIONS and accel:
-            set(action, accel)
-            paths = list(root.get_strv("custom-keybindings"))
     Gio.Settings.sync()
