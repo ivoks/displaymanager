@@ -16,4 +16,4 @@ mullion (0.1.0) resolute; urgency=medium
     - Unit tests (make check) and GitHub Actions CI.
     - Monitor tile in GNOME Quick Settings.
 
- -- Ante Karamatic <ivoks@ubuntu.com>  Thu, 19 Nov 2026 18:56:54 +0100
+ -- Ante Karamatic <ivoks@ubuntu.com>  Fri, 20 Nov 2026 11:29:29 +0100
