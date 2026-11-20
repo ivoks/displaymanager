@@ -9,5 +9,7 @@ displaymanager (0.1.0) resolute; urgency=medium
     - Optional GNOME custom keyboard shortcuts.
     - Original GPL-3+ application icon.
     - Translations with gettext; Croatian translation.
+    - Hand over the keyboard and mouse at the screen edge (GNOME Shell
+      extension).
 
  -- Ante Karamatic <ivoks@ubuntu.com>  Thu, 19 Nov 2026 18:56:54 +0100

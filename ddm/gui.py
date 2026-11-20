@@ -12,7 +12,7 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
-from . import ddc, shortcuts  # noqa: E402
+from . import ddc, edge, shortcuts  # noqa: E402
 from .controller import LAYOUTS, Controller, Layout, save_config  # noqa: E402
 from .i18n import _  # noqa: E402
 
@@ -93,6 +93,14 @@ class Window(Adw.ApplicationWindow):
         self.usb_btn.connect("clicked", self.on_usb)
         self.usb_row.add_suffix(self.usb_btn)
         g.add(self.usb_row)
+        self.edge_row = Adw.SwitchRow(
+            title=_("Switch at Screen Edge"),
+            subtitle=_("Side by side: push the pointer against the edge next "
+                       "to the other computer to hand it the keyboard and "
+                       "mouse"),
+            active=bool(self.ctl.cfg.get("edge_switch")))
+        self.edge_row.connect("notify::active", self.on_edge_switch)
+        g.add(self.edge_row)
         page.add(g)
 
         # --- layout ---------------------------------------------------------
@@ -392,6 +400,22 @@ class Window(Adw.ApplicationWindow):
                 return _("Toggled keyboard and mouse")
             return self.ctl.set_usb(not here)
         self.run(work)
+
+    def on_edge_switch(self, row, _p):
+        if self._updating:
+            return
+        on = row.get_active()
+        self.ctl.cfg["edge_switch"] = on
+        save_config(self.ctl.cfg)       # the extension watches this file
+
+        def done(res):
+            if res is None and on:
+                self.toast(_("Log out and back in once to finish setting up "
+                             "edge switching"))
+            elif res is False:
+                self.toast(_("GNOME Shell couldn’t enable the edge-switch "
+                             "extension"))
+        self.bg(lambda: edge.set_enabled(on), done)
 
     def on_layout(self, btn, lay: Layout):
         if self._updating or not btn.get_active():

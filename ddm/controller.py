@@ -113,6 +113,8 @@ DEFAULTS = {
     "layouts": None,            # cached E9 values the monitor accepts
     "last_layout": 0x24,        # multi-view layout restored by "pbp on"
     "panel_width": 5120,        # native width, for telling PBP sides apart
+    "edge_switch": False,       # move the KVM when the pointer hits the edge
+    "connector": None,          # e.g. "DP-1"; read by the GNOME extension
     # USB devices that live behind the monitor's KVM-switched hub; if any is
     # present on this machine, the keyboard/mouse are here.  (U4025QW:
     # Realtek HID functions on the switched sub-hubs.)  The monitor does not
@@ -187,6 +189,10 @@ class Controller:
                 self.cfg["bus"] = mon.bus
                 self.cfg["monitor_serial"] = mon.serial
                 save_config(self.cfg)
+        connector = mon.connector.split("-", 1)[1]
+        if self.cfg.get("connector") != connector:
+            self.cfg["connector"] = connector
+            save_config(self.cfg)
         self.monitor = mon
         return mon
 
@@ -383,6 +389,25 @@ class Controller:
                 _("Keyboard and mouse moved to the other computer"))
 
     # ---- the one-button action --------------------------------------------
+    def cross(self, edge: str) -> str | None:
+        """The pointer was pushed against this computer's `edge` ("left" or
+        "right") of the monitor.  If, in the current side-by-side layout,
+        the other computer's picture is on that side, hand it the keyboard
+        and mouse.  Returns a message, or None when nothing was done."""
+        lay = LAYOUT_BY_CODE.get(self.get_pxp())
+        if not lay or lay.kind != "pbp":
+            return None
+        this = self.cfg.get("this_input")
+        if this is None:
+            this, _why = self.detect_this_input()
+        left, right = self.get_input(), self.get_right_input()
+        if not ((this == right and edge == "left") or
+                (this == left and edge == "right")):
+            return None
+        if self.usb_here() is False:
+            return None
+        return self.set_usb(False, wait=0)
+
     def switch(self) -> str:
         """In PBP: move keyboard/mouse to the other computer.
         In single view: flip the full screen between this and the other input

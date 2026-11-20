@@ -72,6 +72,11 @@ def main(argv: list[str]) -> int:
                                        "or inset) by hex code, e.g. 0x19"))
     s.add_argument("code")
     sub.add_parser("inputs", help=_("list the inputs the monitor reports"))
+    s = sub.add_parser("cross", help=_("the pointer reached this screen "
+                                       "edge: move the keyboard and mouse "
+                                       "if the other computer is on that "
+                                       "side (used by the GNOME extension)"))
+    s.add_argument("edge", choices=["left", "right"])
     sub.add_parser("detect", help=_("work out which input this computer "
                                     "is plugged into"))
     a = p.parse_args(argv)
@@ -118,7 +123,11 @@ def main(argv: list[str]) -> int:
             for c in ctl.supported_inputs(refresh=True):
                 print(f"0x{c:02X}  {ctl.input_label(c)}")
             return 0
-        if a.cmd == "switch":
+        if a.cmd == "cross":
+            msg = ctl.cross(a.edge)
+            if msg is None:
+                return 0
+        elif a.cmd == "switch":
             msg = ctl.switch()
         elif a.cmd == "usb":
             if a.where == "toggle":

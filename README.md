@@ -100,6 +100,25 @@ Thunderbolt domain) and the keyboard/mouse are plugged into the monitor's
 downstream ports. Assign the upstream to the matching video input in the
 monitor's OSD (USB settings / PBP USB switch).
 
+## Switching at the screen edge
+
+With two computers side by side, DisplayManager can hand the keyboard and
+mouse to the other computer when you push the pointer against the screen
+edge next to its picture, like Dell Display and Peripheral Manager's
+mouse crossing. Turn on **Switch at Screen Edge** on the Display tab.
+
+Wayland doesn't let applications see the pointer, so this is done by a
+small GNOME Shell extension (`extension/displaymanager@ivoks.github.io`,
+installed with the package). It places pressure barriers, like GNOME's hot
+corner, on the outer left and right edges of the monitor and runs
+`displaymanager cross left|right`, which checks the current layout and which
+side this computer is on before moving anything. Edges shared with another
+monitor of this computer are left alone.
+
+After installing for the first time, log out and back in once so GNOME
+Shell finds the extension. The way back is handled by the other computer:
+on a Mac, Dell Display and Peripheral Manager's own edge switching.
+
 ## Translations
 
 Translations use GNU gettext. The template is `po/displaymanager.pot`, each

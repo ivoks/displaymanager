@@ -13,7 +13,7 @@ Depends: ${misc:Depends}, ${python3:Depends},
          python3-gi,
          gir1.2-gtk-4.0,
          gir1.2-adw-1 (>= 1.6)
-Recommends: gnome-settings-daemon
+Recommends: gnome-settings-daemon, gnome-shell
 Description: switch inputs, screen layouts and KVM on DDC/CI monitors
  A GTK 4 / libadwaita application and command line tool that controls
  monitors over DDC/CI:
@@ -24,6 +24,9 @@ Description: switch inputs, screen layouts and KVM on DDC/CI monitors
   * hand the monitor's built-in KVM (USB hub with keyboard and mouse)
     to the other computer
   * optional system-wide GNOME keyboard shortcuts for all of the above
+  * optionally hand over the keyboard and mouse when the pointer is pushed
+    against the screen edge next to the other computer (GNOME Shell
+    extension)
  .
  Developed and tested with a U4025QW monitor; manufacturer-specific VCP
  codes are configurable for other models.

@@ -12,6 +12,9 @@ cp "$here/data/icons/io.github.DisplayManager.svg" \
 cp "$here/data/icons/io.github.DisplayManager-symbolic.svg" \
    "$HOME/.local/share/icons/hicolor/symbolic/apps/"
 ln -sf "$here/displaymanager" "$HOME/.local/bin/displaymanager"
+ext=displaymanager@ivoks.github.io
+mkdir -p "$HOME/.local/share/gnome-shell/extensions"
+ln -sfn "$here/extension/$ext" "$HOME/.local/share/gnome-shell/extensions/$ext"
 sed "s|^Exec=.*|Exec=$HOME/.local/bin/displaymanager|" \
     "$here/build/io.github.DisplayManager.desktop" \
     > "$HOME/.local/share/applications/io.github.DisplayManager.desktop"

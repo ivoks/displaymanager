@@ -2,6 +2,7 @@
 ddm/cli.py
 ddm/controller.py
 ddm/ddc.py
+ddm/edge.py
 ddm/gui.py
 ddm/shortcuts.py
 data/io.github.DisplayManager.desktop.in

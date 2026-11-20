@@ -10,6 +10,7 @@ PREFIX  ?= /usr
 DESTDIR ?=
 DOMAIN   = displaymanager
 APP_ID   = io.github.DisplayManager
+EXT_UUID = displaymanager@ivoks.github.io
 VERSION := $(shell dpkg-parsechangelog -S Version 2>/dev/null || echo 0)
 
 DATADIR  = $(PREFIX)/share
@@ -55,6 +56,9 @@ install: all
 		$(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/$(APP_ID).svg
 	install -D -m 644 data/icons/$(APP_ID)-symbolic.svg \
 		$(DESTDIR)$(DATADIR)/icons/hicolor/symbolic/apps/$(APP_ID)-symbolic.svg
+	install -d $(DESTDIR)$(DATADIR)/gnome-shell/extensions/$(EXT_UUID)
+	install -m 644 extension/$(EXT_UUID)/metadata.json extension/$(EXT_UUID)/extension.js \
+		$(DESTDIR)$(DATADIR)/gnome-shell/extensions/$(EXT_UUID)/
 	for l in $(LINGUAS); do \
 		install -D -m 644 build/locale/$$l/LC_MESSAGES/$(DOMAIN).mo \
 			$(DESTDIR)$(LOCALEDIR)/$$l/LC_MESSAGES/$(DOMAIN).mo; \
