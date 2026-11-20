@@ -256,11 +256,6 @@ class Window(Adw.ApplicationWindow):
             rect(x0 + iw - pw - 3, y0 + ih - ph - 3, pw, ph, second, 2)
 
     # ---------------------------------------------------------------- helpers
-    @staticmethod
-    def _accel_text(accel: str) -> str:
-        ok, key, mods = Gtk.accelerator_parse(accel)
-        return Gtk.accelerator_get_label(key, mods) if ok else accel
-
     def toast(self, msg: str) -> None:
         self.toasts.add_toast(Adw.Toast(title=GLib.markup_escape_text(msg),
                                         timeout=3))
@@ -458,25 +453,44 @@ class Window(Adw.ApplicationWindow):
     def _shortcut_row(self, key: str, title: str, default: str) -> Adw.SwitchRow:
         cur = shortcuts.get(key)
         row = Adw.SwitchRow(title=GLib.markup_escape_text(title),
-                            subtitle=self._accel_text(cur or default),
                             active=cur is not None)
+        self._update_shortcut_subtitle(row, key, cur or default)
         row.connect("notify::active", self.on_shortcut, key)
         self.sc_rows[key] = row
         return row
 
+    def _update_shortcut_subtitle(self, row, key: str, accel: str) -> None:
+        text = shortcuts.label(accel)
+        if shortcuts.keypad_twin(accel):
+            text += " (also on the number pad)"
+        taken = shortcuts.conflicts(accel, key)
+        if taken:
+            text += " · already used by " + ", ".join(taken)
+        row.set_subtitle(GLib.markup_escape_text(text))
+
     def on_enable_layout_shortcuts(self, _btn):
+        failed = []
         for key in shortcuts.LAYOUT_ACTIONS:
             row = self.sc_rows.get(key)
             if row and not row.get_active():
                 row.set_active(True)        # triggers on_shortcut
-        self.toast("Layout shortcuts enabled")
+                if not row.get_active():
+                    failed.append(row.get_title())
+        self.toast("Couldn't enable: " + ", ".join(failed) if failed
+                   else "Layout shortcuts enabled")
 
     def on_shortcut(self, row, _p, key):
-        accel = shortcuts.ACTIONS[key][2] if row.get_active() else None
+        if self._updating:
+            return
+        default = shortcuts.ACTIONS[key][2]
         try:
-            shortcuts.set(key, accel)
+            shortcuts.set(key, default if row.get_active() else None)
         except Exception as e:  # noqa: BLE001
             self.toast(str(e))
+            self._updating = True
+            row.set_active(False)
+            self._updating = False
+        self._update_shortcut_subtitle(row, key, default)
 
     def _raw_code(self):
         try:

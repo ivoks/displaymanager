@@ -4,9 +4,10 @@
 
 from __future__ import annotations
 
+import os
+import re
 import shutil
 import sys
-import os
 
 from gi.repository import Gio
 
@@ -26,12 +27,14 @@ ACTIONS = {
     "layout": ("Monitor: next layout", "layout next", "<Super><Control>l"),
 }
 
-# One shortcut per layout: Super+Alt+1 … 8, in the order shown in the app.
-# (Super+Ctrl+digit is taken by GNOME Shell's "open new window of dock app".)
+# One shortcut per layout, in the order shown in the app.  Super+Ctrl+digit
+# is taken by GNOME Shell ("open new window of dock app N") and
+# Super+Alt+8 by the magnifier, so the last layout uses Super+Alt+9.
+_LAYOUT_KEYS = ["1", "2", "3", "4", "5", "6", "7", "9"]
 LAYOUT_ACTIONS = {
     f"layout-{lay.key}": (f"Monitor: {lay.title} layout", f"layout {lay.key}",
-                          f"<Super><Alt>{i}")
-    for i, lay in enumerate(LAYOUTS, start=1)
+                          f"<Super><Alt>{key}")
+    for lay, key in zip(LAYOUTS, _LAYOUT_KEYS)
 }
 ACTIONS.update(LAYOUT_ACTIONS)
 
@@ -47,6 +50,79 @@ def launcher() -> str:
         return exe
     here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return f"{sys.executable} {os.path.join(here, 'displaymanager')}"
+
+
+_MOD_ALIASES = {"control": "ctrl", "ctl": "ctrl", "ctrl": "ctrl",
+                "primary": "ctrl", "alt": "alt", "mod1": "alt",
+                "super": "super", "mod4": "super", "shift": "shift",
+                "meta": "meta", "hyper": "hyper"}
+
+
+def normalize(accel: str) -> tuple[frozenset, str] | None:
+    """'<Alt><Super>8' and '<Super><Alt>8' -> same key, no GTK needed."""
+    mods = re.findall(r"<([^>]+)>", accel or "")
+    key = re.sub(r"<[^>]+>", "", accel or "").strip().lower()
+    if not key:
+        return None
+    return frozenset(_MOD_ALIASES.get(m.lower(), m.lower()) for m in mods), key
+
+
+def label(accel: str) -> str:
+    """Human-readable 'Super+Alt+9' without needing GTK."""
+    n = normalize(accel)
+    if not n:
+        return accel
+    order = ["super", "ctrl", "alt", "shift", "meta", "hyper"]
+    mods = [m.capitalize() for m in order if m in n[0]]
+    key = n[1].upper() if len(n[1]) == 1 else n[1].capitalize()
+    return "+".join(mods + [key])
+
+
+def conflicts(accel: str, action: str | None = None) -> list[str]:
+    """What else in GNOME already uses this key combination."""
+    want = normalize(accel)
+    if want is None:
+        return []
+    src = Gio.SettingsSchemaSource.get_default()
+    found = []
+    if src:
+        for sid in src.list_schemas(True)[0]:
+            if not re.search(r"keybinding|media-keys|dash-to-dock|\.wm\.", sid):
+                continue
+            schema = src.lookup(sid, True)
+            if schema is None or schema.get_path() is None:
+                continue
+            settings = Gio.Settings.new(sid)
+            for k in schema.list_keys():
+                value = settings.get_value(k)
+                t = value.get_type_string()
+                vals = [value.unpack()] if t == "s" else \
+                    value.unpack() if t == "as" else []
+                if any(normalize(v) == want for v in vals if "<" in v):
+                    found.append(schema.get_key(k).get_summary() or k)
+    if _available():
+        own = {BASE + PREFIX + action + sfx + "/" for sfx in ("", KEYPAD_SUFFIX)} \
+            if action else set()
+        for path in Gio.Settings.new(SCHEMA).get_strv("custom-keybindings"):
+            if path in own:
+                continue
+            c = _child(path)
+            if normalize(c.get_string("binding")) == want:
+                found.append(c.get_string("name") or path)
+    return found
+
+
+KEYPAD_SUFFIX = "-keypad"
+
+
+def keypad_twin(accel: str | None) -> str | None:
+    """'<Super><Alt>2' -> '<Super><Alt>KP_2'.  Number-pad keys send their
+    own keysyms, and a GNOME custom shortcut holds only one binding, so
+    digit shortcuts get a companion entry for the number pad."""
+    if not accel:
+        return None
+    m = re.fullmatch(r"((?:<[^>]+>)*)([0-9])", accel)
+    return f"{m.group(1)}KP_{m.group(2)}" if m else None
 
 
 def _child(path: str) -> Gio.Settings:
@@ -66,19 +142,27 @@ def get(action: str) -> str | None:
 def set(action: str, accel: str | None) -> None:
     if not _available():
         raise RuntimeError("GNOME media-keys schema not available")
+    if accel:
+        for a in filter(None, (accel, keypad_twin(accel))):
+            taken = conflicts(a, action)
+            if taken:
+                raise ValueError(f"{label(a)} is already used by: "
+                                 + ", ".join(taken))
     root = Gio.Settings.new(SCHEMA)
     paths = list(root.get_strv("custom-keybindings"))
-    path = BASE + PREFIX + action + "/"
-    if accel:
-        name, cmd, _ = ACTIONS[action]
-        c = _child(path)
-        c.set_string("name", name)
-        c.set_string("command", f"{launcher()} {cmd}")
-        c.set_string("binding", accel)
-        if path not in paths:
-            paths.append(path)
-    else:
-        if path in paths:
+    name, cmd, _ = ACTIONS[action]
+    entries = [(BASE + PREFIX + action + "/", accel, name),
+               (BASE + PREFIX + action + KEYPAD_SUFFIX + "/",
+                keypad_twin(accel), name + " (number pad)")]
+    for path, binding, title in entries:
+        if binding:
+            c = _child(path)
+            c.set_string("name", title)
+            c.set_string("command", f"{launcher()} {cmd}")
+            c.set_string("binding", binding)
+            if path not in paths:
+                paths.append(path)
+        elif path in paths:
             paths.remove(path)
             c = _child(path)
             for k in ("name", "command", "binding"):

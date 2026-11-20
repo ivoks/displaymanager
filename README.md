@@ -42,9 +42,13 @@ Shortcuts):
 | Super+Ctrl+P | Toggle side-by-side |
 | Super+Ctrl+S | Swap left/right |
 | Super+Ctrl+L | Next layout |
-| Super+Alt+1 … 8 | Single, Even Split, Wide Left, Wider Left, Wide Right, Wider Right, Small Inset, Large Inset |
+| Super+Alt+1 … 7, 9 | Single, Even Split, Wide Left, Wider Left, Wide Right, Wider Right, Small Inset, Large Inset |
 
-Super+Ctrl+1 … 9 is not used because GNOME Shell already binds it.
+The layout keys work on both the number row and the number pad (the app
+installs a second GNOME shortcut for the number pad). Super+Ctrl+digit is
+taken by GNOME Shell and Super+Alt+8 by the magnifier, so Large Inset uses
+Super+Alt+9. The app refuses to enable a shortcut whose keys are already
+used elsewhere in GNOME.
 
 ## Layouts
 
