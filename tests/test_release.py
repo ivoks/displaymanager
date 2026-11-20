@@ -32,11 +32,14 @@ class Release(unittest.TestCase):
         self.assertEqual(meta["gettext-domain"], i18n.DOMAIN)
 
     def test_app_id_is_consistent(self):
-        from mullion import gui
+        # Read it from the source: importing mullion.gui needs GTK, which
+        # the build environment doesn't have.
+        with open(os.path.join(ROOT, "mullion", "gui.py")) as f:
+            app_id = re.search(r'^APP_ID = "([^"]+)"', f.read(), re.M).group(1)
         names = os.listdir(os.path.join(ROOT, "data"))
-        self.assertIn(gui.APP_ID + ".desktop.in", names)
+        self.assertIn(app_id + ".desktop.in", names)
         with open(os.path.join(EXT, "quickmenu.js")) as f:
-            self.assertIn(f"'{gui.APP_ID}'", f.read())
+            self.assertIn(f"'{app_id}'", f.read())
 
 
 if __name__ == "__main__":
