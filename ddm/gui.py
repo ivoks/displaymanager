@@ -13,7 +13,8 @@ gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from . import ddc, edge, shortcuts  # noqa: E402
-from .controller import LAYOUTS, Controller, Layout, save_config  # noqa: E402
+from .controller import (LAYOUTS, LEVELS, Controller, Layout,  # noqa: E402
+                         save_config)
 from .i18n import _  # noqa: E402
 
 APP_ID = "io.github.DisplayManager"
@@ -138,6 +139,31 @@ class Window(Adw.ApplicationWindow):
                                       model=self.input_model)
         self.right_row.connect("notify::selected", self.on_right_input)
         g.add(self.right_row)
+        page.add(g)
+
+        # --- picture & sound ----------------------------------------------
+        g = Adw.PreferencesGroup(
+            title=GLib.markup_escape_text(_("Picture & Sound")))
+        self.level_scales: dict[str, Gtk.Scale] = {}
+        self._level_pending: dict[str, int] = {}
+        icons = {"brightness": "display-brightness-symbolic",
+                 "contrast": "color-select-symbolic",
+                 "volume": "audio-volume-high-symbolic"}
+        for name, title in LEVELS.items():
+            row = Adw.ActionRow(title=_(title))
+            row.add_prefix(Gtk.Image(icon_name=icons[name]))
+            scale = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL,
+                                             0, 100, 1)
+            scale.set_draw_value(True)
+            scale.set_value_pos(Gtk.PositionType.RIGHT)
+            scale.set_digits(0)
+            scale.set_hexpand(True)
+            scale.set_valign(Gtk.Align.CENTER)
+            scale.set_size_request(220, -1)
+            scale.connect("value-changed", self.on_level_changed, name)
+            row.add_suffix(scale)
+            self.level_scales[name] = scale
+            g.add(row)
         page.add(g)
 
         # --- inputs ---------------------------------------------------------
@@ -352,6 +378,13 @@ class Window(Adw.ApplicationWindow):
                     btn.set_active(True)
             self.layout_box.set_sensitive(st.pxp_raw is not None)
             self.right_row.set_sensitive(bool(st.pbp))
+            for name, scale in self.level_scales.items():
+                level = (st.levels or {}).get(name)
+                scale.get_ancestor(Adw.ActionRow).set_sensitive(level is not None)
+                if level and name not in self._level_pending:
+                    cur, top = level
+                    scale.set_range(0, top)
+                    scale.set_value(cur)
             if st.right_input in inputs:
                 self.right_row.set_selected(inputs.index(st.right_input))
             other = cfg.get("other_input")
@@ -400,6 +433,31 @@ class Window(Adw.ApplicationWindow):
                 return _("Toggled keyboard and mouse")
             return self.ctl.set_usb(not here)
         self.run(work)
+
+    def on_level_changed(self, scale, name: str):
+        """Coalesce slider drags: write at most every 150 ms per setting."""
+        if self._updating:
+            return
+        first = name not in self._level_pending
+        self._level_pending[name] = int(scale.get_value())
+        if first:
+            GLib.timeout_add(150, self._flush_level, name)
+
+    def _flush_level(self, name: str) -> bool:
+        value = self._level_pending.get(name)
+
+        def done(_res):
+            # A newer value arrived while writing: write that one too.
+            if self._level_pending.get(name) != value:
+                GLib.timeout_add(150, self._flush_level, name)
+            else:
+                self._level_pending.pop(name, None)
+
+        def failed(exc):
+            self._level_pending.pop(name, None)
+            self.on_error(exc)
+        self.bg(lambda: self.ctl.set_level(name, value), done, failed)
+        return False
 
     def on_edge_switch(self, row, _p):
         if self._updating:

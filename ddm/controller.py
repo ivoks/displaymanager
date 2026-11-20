@@ -53,6 +53,13 @@ LAYOUTS = [
 ]
 LAYOUT_BY_CODE = {lay.code: lay for lay in LAYOUTS}
 
+# Continuous settings with sliders: name -> translatable title.
+LEVELS = {
+    "brightness": N_("Brightness"),
+    "contrast": N_("Contrast"),
+    "volume": N_("Volume"),
+}
+
 
 def find_layout(name: str) -> Layout | None:
     name = name.strip().lower().replace("/", "-").replace(":", "-")
@@ -127,6 +134,7 @@ DEFAULTS = {
         "pbp_right_input": 0xE8,
         "swap_video": 0xE5, "swap_video_value": 0xF001,
         "usb": 0xE7, "usb_toggle_value": 0xFF00,
+        "brightness": 0x10, "contrast": 0x12, "volume": 0x62,
     },
 }
 
@@ -163,6 +171,7 @@ class Status:
     right_input: int | None = None
     usb_raw: int | None = None
     usb_here: bool | None = None
+    levels: dict = None             # {"brightness": (cur, max), ...}
     error: str | None = None
 
 
@@ -388,6 +397,27 @@ class Controller:
         return (_("Keyboard and mouse moved here") if here else
                 _("Keyboard and mouse moved to the other computer"))
 
+    # ---- brightness, contrast, volume -------------------------------------
+    def get_level(self, name: str) -> tuple[int, int]:
+        """(current, maximum) of "brightness", "contrast" or "volume"."""
+        v = ddc.getvcp(self.bus, self.vcp[name])
+        return v.value, v.maximum or 100
+
+    def set_level(self, name: str, value: int) -> int:
+        """Set a level, clamped to the monitor's range; returns it."""
+        _cur, top = self.get_level(name)
+        value = max(0, min(top, int(value)))
+        ddc.setvcp(self.bus, self.vcp[name], value)
+        return value
+
+    def adjust_level(self, name: str, spec: str) -> int:
+        """spec is "60", "+10" or "-10"."""
+        spec = spec.strip()
+        if spec[:1] in "+-":
+            cur, _top = self.get_level(name)
+            return self.set_level(name, cur + int(spec))
+        return self.set_level(name, int(spec))
+
     # ---- the one-button action --------------------------------------------
     def cross(self, edge: str) -> str | None:
         """The pointer was pushed against this computer's `edge` ("left" or
@@ -449,4 +479,10 @@ class Controller:
         except ddc.DDCError:
             pass
         st.usb_here = self.usb_here()
+        st.levels = {}
+        for name in LEVELS:
+            try:
+                st.levels[name] = self.get_level(name)
+            except ddc.DDCError:
+                pass
         return st

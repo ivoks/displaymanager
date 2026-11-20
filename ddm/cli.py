@@ -8,7 +8,7 @@ import argparse
 import sys
 
 from . import ddc
-from .controller import LAYOUT_BY_CODE, Controller, find_layout
+from .controller import LAYOUT_BY_CODE, LEVELS, Controller, find_layout
 from .i18n import _
 
 
@@ -71,6 +71,13 @@ def main(argv: list[str]) -> int:
     s = sub.add_parser("right", help=_("select the second input (right side "
                                        "or inset) by hex code, e.g. 0x19"))
     s.add_argument("code")
+    for name, help_text in (
+            ("brightness", _("show or set brightness: 0–100, +N or -N")),
+            ("contrast", _("show or set contrast: 0–100, +N or -N")),
+            ("volume", _("show or set the speaker volume: 0–100, +N or "
+                         "-N"))):
+        s = sub.add_parser(name, help=help_text)
+        s.add_argument("value", nargs="?")
     sub.add_parser("inputs", help=_("list the inputs the monitor reports"))
     s = sub.add_parser("cross", help=_("the pointer reached this screen "
                                        "edge: move the keyboard and mouse "
@@ -101,6 +108,10 @@ def main(argv: list[str]) -> int:
                 rows.append((_("Second input:"),
                              f"{ctl.input_label(st.right_input)} "
                              f"(0x{st.right_input:02X})"))
+            for name, title in LEVELS.items():
+                if name in st.levels:
+                    cur, top = st.levels[name]
+                    rows.append((_(title) + ":", f"{cur} / {top}"))
             rows.append((_("Keyboard & mouse:"), {
                 True: _("this computer"), False: _("other computer"),
                 None: _("unknown")}[st.usb_here]))
@@ -123,7 +134,20 @@ def main(argv: list[str]) -> int:
             for c in ctl.supported_inputs(refresh=True):
                 print(f"0x{c:02X}  {ctl.input_label(c)}")
             return 0
-        if a.cmd == "cross":
+        if a.cmd in LEVELS:
+            title = _(LEVELS[a.cmd])
+            if a.value is None:
+                cur, top = ctl.get_level(a.cmd)
+                print(f"{title}: {cur} / {top}")
+                return 0
+            try:
+                value = ctl.adjust_level(a.cmd, a.value)
+            except ValueError:
+                print(_("error: “{value}” is not a number, +N or -N").format(
+                    value=a.value), file=sys.stderr)
+                return 2
+            msg = f"{title}: {value}"
+        elif a.cmd == "cross":
             msg = ctl.cross(a.edge)
             if msg is None:
                 return 0

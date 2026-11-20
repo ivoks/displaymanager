@@ -63,6 +63,15 @@ class VCPValue:
     def low(self) -> int:
         return self.value & 0xFF
 
+    @property
+    def maximum(self) -> int:
+        """Maximum of a continuous feature (e.g. brightness), else 0xFFFF."""
+        if len(self.raw) == 2:
+            return self.raw[1]
+        if len(self.raw) == 4:
+            return (self.raw[0] << 8) | self.raw[1]
+        return 0xFFFF
+
 
 # --------------------------------------------------------------------------
 # Discovery via sysfs: fast (no I2C traffic), gives us bus candidates.
@@ -140,7 +149,7 @@ def getvcp(bus: int, code: int) -> VCPValue:
     nums = [int(t.lstrip("x"), 16) if t.startswith("x") else int(t)
             for t in rest if re.fullmatch(r"x?[0-9A-Fa-f]+", t)]
     if kind == "C" and nums:          # continuous: current max
-        return VCPValue(code, [nums[0]])
+        return VCPValue(code, nums[:2])
     if not nums:
         raise DDCError(f"Could not parse: {out.strip()}")
     return VCPValue(code, nums)

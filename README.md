@@ -1,5 +1,6 @@
 # DisplayManager for GNOME
 
+
 A small GTK4/libadwaita app (plus CLI) that does what Dell Display and
 Peripheral Manager does on macOS for a Dell U4025QW: switch inputs, toggle
 Picture-by-Picture, swap sides and hand the monitor's USB hub (keyboard and
@@ -29,6 +30,7 @@ displaymanager swap            # swap left/right in PBP
 displaymanager input 0x19      # full-screen / left input
 displaymanager right 0x0f      # PBP right-side input
 displaymanager usb here|away|toggle   # keyboard & mouse (KVM)
+displaymanager brightness [N|+N|-N] # also: contrast, volume (0–100)
 ```
 
 The app can install system-wide GNOME shortcuts that call these commands
