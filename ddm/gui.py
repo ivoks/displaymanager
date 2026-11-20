@@ -146,7 +146,7 @@ class Window(Adw.ApplicationWindow):
         self.other_row.connect("notify::selected", self.on_role, "other_input")
         self.full_row.connect("notify::selected", self.on_full_input)
         detect = Gtk.Button(label="Detect", valign=Gtk.Align.CENTER,
-                            tooltip_text="Use the input currently shown")
+                            tooltip_text="Work out which input this computer is plugged into")
         detect.connect("clicked", self.on_detect_this)
         self.this_row.add_suffix(detect)
         self.other_name = Adw.EntryRow(title="Other Computer Name",
@@ -423,9 +423,14 @@ class Window(Adw.ApplicationWindow):
                      f"Right side: {self.ctl.input_label(code)}")
 
     def on_detect_this(self, _b):
-        def done(code):
+        def done(res):
+            code, why = res
+            if code is None:
+                self.toast(f"Couldn't tell which input this is ({why}); "
+                           "choose it from the list")
+                return
             if code not in self.inputs:
-                self.toast(f"Current input 0x{code:02X} is not in the list")
+                self.toast(f"Detected input 0x{code:02X} is not in the list")
                 return
             self.ctl.cfg["this_input"] = code
             save_config(self.ctl.cfg)
@@ -433,7 +438,7 @@ class Window(Adw.ApplicationWindow):
             self.this_row.set_selected(self.inputs.index(code))
             self._updating = False
             self.toast(f"This computer: {self.ctl.input_label(code)}")
-        self.bg(self.ctl.get_input, done)
+        self.bg(self.ctl.detect_this_input, done)
 
     def on_rename(self, entry):
         other = self.ctl.cfg.get("other_input")

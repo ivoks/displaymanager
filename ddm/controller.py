@@ -7,6 +7,7 @@ from __future__ import annotations
 import glob
 import json
 import os
+import re
 import time
 from dataclasses import dataclass
 
@@ -59,6 +60,44 @@ def find_layout(name: str) -> Layout | None:
         return None
 
 
+# Which VCP 60 input codes can feed which kind of DRM connector.
+HDMI_INPUTS = {0x11, 0x12}
+DP_INPUTS = {0x0F, 0x10}
+USBC_INPUTS = {0x19, 0x1B, 0x1C}      # Thunderbolt / USB-C (DisplayPort inside)
+DVI_INPUTS = {0x03, 0x04}
+VGA_INPUTS = {0x01}
+
+
+def _connector_inputs(connector: str) -> set[int] | None:
+    """Input codes that could be on the other end of a DRM connector,
+    e.g. "card1-DP-1" -> DisplayPort or USB-C/Thunderbolt inputs."""
+    kind = re.sub(r"^card\d+-|-\d+$", "", connector).upper()
+    if kind.startswith("HDMI"):
+        return HDMI_INPUTS
+    if kind in ("DP", "EDP"):
+        return DP_INPUTS | USBC_INPUTS
+    if kind.startswith("DVI"):
+        return DVI_INPUTS | HDMI_INPUTS
+    if kind == "VGA":
+        return VGA_INPUTS
+    return None
+
+
+def _usb_c_video_possible() -> bool:
+    """False when this machine has no Thunderbolt/USB4 device and no USB-C
+    DisplayPort partner, i.e. its video cannot be reaching the monitor's
+    USB-C / Thunderbolt input."""
+    for d in glob.glob("/sys/bus/thunderbolt/devices/*"):
+        if re.fullmatch(r"\d+-[1-9][0-9a-f]*", os.path.basename(d)):
+            return True                  # a device beyond the host router
+    if glob.glob("/sys/class/typec/port*-partner"):
+        return True
+    if not os.path.isdir("/sys/bus/thunderbolt") and \
+            not os.path.isdir("/sys/class/typec"):
+        return True                      # no information: don't rule it out
+    return False
+
+
 DEFAULTS = {
     "monitor_serial": None,     # pick this monitor if several are attached
     "bus": None,                # cached bus once probed
@@ -68,6 +107,7 @@ DEFAULTS = {
     "inputs": None,             # cached list of supported input codes
     "layouts": None,            # cached E9 values the monitor accepts
     "last_layout": 0x24,        # multi-view layout restored by "pbp on"
+    "panel_width": 5120,        # native width, for telling PBP sides apart
     # USB devices that live behind the monitor's KVM-switched hub; if any is
     # present on this machine, the keyboard/mouse are here.  (U4025QW:
     # Realtek HID functions on the switched sub-hubs.)  The monitor does not
@@ -174,6 +214,59 @@ class Controller:
         custom = self.cfg["input_labels"].get(f"0x{code:02x}")
         base = INPUT_NAMES.get(code, f"Input 0x{code:02X}")
         return f"{custom} ({base})" if custom else base
+
+    def detect_this_input(self) -> tuple[int | None, str]:
+        """Work out which monitor input this computer is plugged into.
+
+        The monitor doesn't say which input a DDC command arrived on, so we
+        narrow the candidates down using what this machine can see:
+        connector type, whether USB-C/Thunderbolt video is even possible,
+        which inputs are on screen, and (in uneven splits) our resolution.
+        Returns (code or None, explanation)."""
+        mon = self.monitor or self.connect()
+        cands = list(self.supported_inputs())
+        why = []
+        allowed = _connector_inputs(mon.connector)
+        if allowed is not None:
+            cands = [c for c in cands if c in allowed]
+            why.append(f"connected via {mon.connector.split('-', 1)[1]}")
+        if len(cands) > 1 and not _usb_c_video_possible():
+            narrowed = [c for c in cands if c not in USBC_INPUTS]
+            if narrowed:
+                cands = narrowed
+                why.append("no Thunderbolt/USB-C video link")
+        if len(cands) > 1:
+            shown = {self.get_input()}
+            layout = self.get_pxp()
+            if layout != self.vcp["pxp_off"]:
+                shown.add(self.get_right_input())
+            narrowed = [c for c in cands if c in shown]
+            if narrowed:
+                cands = narrowed
+                why.append("on screen")
+            lay = LAYOUT_BY_CODE.get(layout)
+            if len(cands) > 1 and lay and lay.kind == "pbp" and lay.left != 0.5:
+                width = self._current_width()
+                panel = self.cfg.get("panel_width") or 5120
+                if width:
+                    left_w, right_w = panel * lay.left, panel * (1 - lay.left)
+                    side = self.get_input() if abs(width - left_w) < \
+                        abs(width - right_w) else self.get_right_input()
+                    if side in cands:
+                        cands = [side]
+                        why.append(f"{width} px wide in {lay.title}")
+        if len(cands) == 1:
+            return cands[0], ", ".join(why)
+        names = ", ".join(self.input_label(c) for c in cands) or "none"
+        return None, f"could be any of: {names}"
+
+    def _current_width(self) -> int | None:
+        try:
+            first = open(f"/sys/class/drm/{self.monitor.connector}/modes") \
+                .readline().strip()
+            return int(first.split("x")[0])
+        except (OSError, ValueError):
+            return None
 
     def get_input(self) -> int:
         return ddc.getvcp(self.bus, self.vcp["input"]).low

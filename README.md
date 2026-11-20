@@ -21,6 +21,7 @@ Launch **DisplayManager** from the app grid, or use the CLI:
 
 ```
 displaymanager status
+displaymanager detect          # which input is this computer plugged into
 displaymanager switch          # PBP: move KVM; single view: flip input
 displaymanager layout list|next|<name>   # see layouts below
 displaymanager pbp on|off|toggle    # last used layout / single

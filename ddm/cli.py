@@ -58,6 +58,7 @@ def main(argv: list[str]) -> int:
     s = sub.add_parser("right", help="select PBP right-side input, e.g. 0x19")
     s.add_argument("code")
     sub.add_parser("inputs", help="list inputs reported by the monitor")
+    sub.add_parser("detect", help="work out which input this computer uses")
     a = p.parse_args(argv)
 
     ctl = Controller()
@@ -83,6 +84,14 @@ def main(argv: list[str]) -> int:
             for k in ("this_input", "other_input"):
                 v = ctl.cfg.get(k)
                 print(f"{k.split('_')[0].capitalize() + ':':10}{ctl.input_label(v) if v is not None else 'not set'}")
+            return 0
+        if a.cmd == "detect":
+            code, why = ctl.detect_this_input()
+            if code is None:
+                print(f"Could not tell: {why}")
+                return 1
+            print(f"This computer: {ctl.input_label(code)} (0x{code:02X}) "
+                  f"[{why}]")
             return 0
         if a.cmd == "inputs":
             for c in ctl.supported_inputs(refresh=True):
