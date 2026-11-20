@@ -17,6 +17,8 @@ import subprocess
 import threading
 from dataclasses import dataclass, field
 
+from .i18n import _
+
 DDCUTIL = shutil.which("ddcutil") or "/usr/bin/ddcutil"
 
 # A single lock: the monitor's DDC/CI interface cannot handle concurrent
@@ -26,6 +28,10 @@ _lock = threading.Lock()
 
 class DDCError(RuntimeError):
     pass
+
+
+class DDCAccessError(DDCError):
+    """The monitor's I2C device exists but we may not open it."""
 
 
 @dataclass
@@ -106,7 +112,7 @@ def bus_accessible(bus: int) -> bool:
 
 def _run(args: list[str], timeout: float = 15) -> str:
     if not os.path.exists(DDCUTIL):
-        raise DDCError("ddcutil is not installed (sudo apt install ddcutil)")
+        raise DDCError(_("ddcutil is not installed (sudo apt install ddcutil)"))
     with _lock:
         try:
             p = subprocess.run([DDCUTIL, *args], capture_output=True,
@@ -129,7 +135,8 @@ def getvcp(bus: int, code: int) -> VCPValue:
         raise DDCError(f"Unexpected ddcutil output: {out.strip()}")
     kind, rest = m.group(2), m.group(3).split()
     if kind in ("ERR", "UNSUPPORTED", "INVALID"):
-        raise DDCError(f"Feature {code:02X} not supported by monitor")
+        raise DDCError(_("Feature {code} is not supported by the monitor")
+                       .format(code=f"{code:02X}"))
     nums = [int(t.lstrip("x"), 16) if t.startswith("x") else int(t)
             for t in rest if re.fullmatch(r"x?[0-9A-Fa-f]+", t)]
     if kind == "C" and nums:          # continuous: current max
@@ -190,9 +197,11 @@ def capabilities(bus: int) -> dict[int, dict[int, str]]:
 def probe_bus(mon: Monitor) -> int:
     """Find which candidate bus answers DDC/CI for this monitor."""
     errors = []
+    denied = 0
     for bus in mon.buses:
         if not bus_accessible(bus):
-            errors.append(f"/dev/i2c-{bus}: permission denied")
+            errors.append(f"/dev/i2c-{bus}: " + _("permission denied"))
+            denied += 1
             continue
         try:
             getvcp(bus, 0x60)
@@ -200,4 +209,6 @@ def probe_bus(mon: Monitor) -> int:
             return bus
         except DDCError as e:
             errors.append(f"/dev/i2c-{bus}: {e}")
-    raise DDCError("; ".join(errors) or "no I2C bus for this connector")
+    if denied and denied == len(mon.buses):
+        raise DDCAccessError("; ".join(errors))
+    raise DDCError("; ".join(errors) or _("no I2C bus for this connector"))

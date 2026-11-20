@@ -12,13 +12,14 @@ import time
 from dataclasses import dataclass
 
 from . import ddc
+from .i18n import N_, _
 
 _XDG_CONFIG = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
 CONFIG_DIR = os.path.join(_XDG_CONFIG, "displaymanager")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
 
 # MCCS standard input codes (VCP 0x60) plus the values Dell uses.
-INPUT_NAMES = {
+INPUT_NAMES = {      # connector names; not translated
     0x01: "VGA", 0x03: "DVI-1", 0x04: "DVI-2",
     0x0F: "DisplayPort-1", 0x10: "DisplayPort-2",
     0x11: "HDMI-1", 0x12: "HDMI-2",
@@ -29,22 +30,26 @@ INPUT_NAMES = {
 class Layout:
     code: int        # value of VCP E9 (PxP mode)
     key: str         # CLI name
-    title: str
+    name: str        # English title (msgid); use .title for display
     kind: str        # "single" | "pbp" | "pip"
     left: float = 1.0  # share of the width given to the main (left) input
+
+    @property
+    def title(self) -> str:
+        return _(self.name)
 
 
 # Measured on a U4025QW by watching the resolution the right-hand source is
 # given in each mode (panel is 5120x2160).
 LAYOUTS = [
-    Layout(0x00, "single", "Single", "single"),
-    Layout(0x24, "50-50", "Even Split", "pbp", 0.50),
-    Layout(0x2A, "75-25", "Wide Left", "pbp", 0.75),
-    Layout(0x28, "80-20", "Wider Left", "pbp", 0.80),
-    Layout(0x29, "25-75", "Wide Right", "pbp", 0.25),
-    Layout(0x27, "20-80", "Wider Right", "pbp", 0.20),
-    Layout(0x21, "pip-small", "Small Inset", "pip"),
-    Layout(0x22, "pip-large", "Large Inset", "pip"),
+    Layout(0x00, "single", N_("Single"), "single"),
+    Layout(0x24, "50-50", N_("Even Split"), "pbp", 0.50),
+    Layout(0x2A, "75-25", N_("Wide Left"), "pbp", 0.75),
+    Layout(0x28, "80-20", N_("Wider Left"), "pbp", 0.80),
+    Layout(0x29, "25-75", N_("Wide Right"), "pbp", 0.25),
+    Layout(0x27, "20-80", N_("Wider Right"), "pbp", 0.20),
+    Layout(0x21, "pip-small", N_("Small Inset"), "pip"),
+    Layout(0x22, "pip-large", N_("Large Inset"), "pip"),
 ]
 LAYOUT_BY_CODE = {lay.code: lay for lay in LAYOUTS}
 
@@ -52,7 +57,7 @@ LAYOUT_BY_CODE = {lay.code: lay for lay in LAYOUTS}
 def find_layout(name: str) -> Layout | None:
     name = name.strip().lower().replace("/", "-").replace(":", "-")
     for lay in LAYOUTS:
-        if name in (lay.key, lay.title.lower()):
+        if name in (lay.key, lay.name.lower(), lay.title.lower()):
             return lay
     try:
         return LAYOUT_BY_CODE.get(int(name, 16))
@@ -170,7 +175,7 @@ class Controller:
         dells = [m for m in mons if m.model.upper().startswith("DELL")]
         pool = dells or mons
         if not pool:
-            raise ddc.DDCError("No monitor found on any display connector")
+            raise ddc.DDCError(_("No monitor found on any display connector"))
         want = self.cfg.get("monitor_serial")
         mon = next((m for m in pool if want and m.serial == want), pool[0])
         cached = self.cfg.get("bus")
@@ -212,7 +217,8 @@ class Controller:
 
     def input_label(self, code: int) -> str:
         custom = self.cfg["input_labels"].get(f"0x{code:02x}")
-        base = INPUT_NAMES.get(code, f"Input 0x{code:02X}")
+        base = INPUT_NAMES.get(code) or \
+            _("Input {code}").format(code=f"0x{code:02X}")
         return f"{custom} ({base})" if custom else base
 
     def detect_this_input(self) -> tuple[int | None, str]:
@@ -229,12 +235,13 @@ class Controller:
         allowed = _connector_inputs(mon.connector)
         if allowed is not None:
             cands = [c for c in cands if c in allowed]
-            why.append(f"connected via {mon.connector.split('-', 1)[1]}")
+            why.append(_("connected via {connector}").format(
+                connector=mon.connector.split('-', 1)[1]))
         if len(cands) > 1 and not _usb_c_video_possible():
             narrowed = [c for c in cands if c not in USBC_INPUTS]
             if narrowed:
                 cands = narrowed
-                why.append("no Thunderbolt/USB-C video link")
+                why.append(_("no Thunderbolt/USB-C video link"))
         if len(cands) > 1:
             shown = {self.get_input()}
             layout = self.get_pxp()
@@ -243,7 +250,7 @@ class Controller:
             narrowed = [c for c in cands if c in shown]
             if narrowed:
                 cands = narrowed
-                why.append("on screen")
+                why.append(_("on screen"))
             lay = LAYOUT_BY_CODE.get(layout)
             if len(cands) > 1 and lay and lay.kind == "pbp" and lay.left != 0.5:
                 width = self._current_width()
@@ -254,11 +261,12 @@ class Controller:
                         abs(width - right_w) else self.get_right_input()
                     if side in cands:
                         cands = [side]
-                        why.append(f"{width} px wide in {lay.title}")
+                        why.append(_("{width} px wide in {layout}").format(
+                            width=width, layout=lay.title))
         if len(cands) == 1:
             return cands[0], ", ".join(why)
-        names = ", ".join(self.input_label(c) for c in cands) or "none"
-        return None, f"could be any of: {names}"
+        names = ", ".join(self.input_label(c) for c in cands) or _("none")
+        return None, _("could be any of: {inputs}").format(inputs=names)
 
     def _current_width(self) -> int | None:
         try:
@@ -362,8 +370,8 @@ class Controller:
         is already there.  Waits for USB to settle when state is known."""
         cur = self.usb_here()
         if cur is not None and cur == here:
-            return ("Keyboard and mouse are already "
-                    + ("here" if here else "on the other computer"))
+            return (_("Keyboard and mouse are already here") if here else
+                    _("Keyboard and mouse are already on the other computer"))
         self.toggle_usb()
         if cur is not None and wait:
             deadline = time.monotonic() + wait
@@ -371,8 +379,8 @@ class Controller:
                 time.sleep(0.25)
                 if self.usb_here() == here:
                     break
-        return ("Keyboard and mouse moved "
-                + ("here" if here else "to the other computer"))
+        return (_("Keyboard and mouse moved here") if here else
+                _("Keyboard and mouse moved to the other computer"))
 
     # ---- the one-button action --------------------------------------------
     def switch(self) -> str:
@@ -383,16 +391,16 @@ class Controller:
             here = self.usb_here()
             if here is None:
                 self.toggle_usb()
-                return "Toggled keyboard and mouse"
+                return _("Toggled keyboard and mouse")
             return self.set_usb(not here)
         this, other = self.cfg.get("this_input"), self.cfg.get("other_input")
         if this is None or other is None:
-            raise ddc.DDCError("Set 'This computer' and 'Other computer' "
-                               "inputs in the app first")
+            raise ddc.DDCError(_("Set “This Computer” and “Other Computer” "
+                                 "in the app first"))
         cur = self.get_input()
         target = other if cur == this else this
         self.set_input(target)
-        return f"Switched to {self.input_label(target)}"
+        return _("Switched to {input}").format(input=self.input_label(target))
 
     def status(self) -> Status:
         st = Status()

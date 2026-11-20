@@ -12,19 +12,20 @@ import sys
 from gi.repository import Gio
 
 from .controller import LAYOUTS
+from .i18n import N_, _
 
 SCHEMA = "org.gnome.settings-daemon.plugins.media-keys"
 CHILD = SCHEMA + ".custom-keybinding"
 BASE = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/"
 PREFIX = "displaymanager-"
 
-# id -> (human name, CLI sub-command, default accelerator)
+# id -> (title msgid, CLI sub-command, default accelerator)
 ACTIONS = {
-    "switch": ("Monitor: switch computer", "switch", "<Super><Control>k"),
-    "usb": ("Monitor: move keyboard & mouse", "usb toggle", "<Super><Control>u"),
-    "pbp": ("Monitor: toggle side-by-side", "pbp toggle", "<Super><Control>p"),
-    "swap": ("Monitor: swap left/right", "swap", "<Super><Control>s"),
-    "layout": ("Monitor: next layout", "layout next", "<Super><Control>l"),
+    "switch": (N_("Switch computer"), "switch", "<Super><Control>k"),
+    "usb": (N_("Move keyboard & mouse"), "usb toggle", "<Super><Control>u"),
+    "pbp": (N_("Toggle side-by-side"), "pbp toggle", "<Super><Control>p"),
+    "swap": (N_("Swap left/right"), "swap", "<Super><Control>s"),
+    "layout": (N_("Next layout"), "layout next", "<Super><Control>l"),
 }
 
 # One shortcut per layout, in the order shown in the app.  Super+Ctrl+digit
@@ -32,11 +33,22 @@ ACTIONS = {
 # Super+Alt+8 by the magnifier, so the last layout uses Super+Alt+9.
 _LAYOUT_KEYS = ["1", "2", "3", "4", "5", "6", "7", "9"]
 LAYOUT_ACTIONS = {
-    f"layout-{lay.key}": (f"Monitor: {lay.title} layout", f"layout {lay.key}",
-                          f"<Super><Alt>{key}")
+    f"layout-{lay.key}": (lay.name, f"layout {lay.key}", f"<Super><Alt>{key}")
     for lay, key in zip(LAYOUTS, _LAYOUT_KEYS)
 }
 ACTIONS.update(LAYOUT_ACTIONS)
+
+
+def title(action: str) -> str:
+    """Translated short title, e.g. for a row in the app."""
+    return _(ACTIONS[action][0])
+
+
+def gnome_name(action: str) -> str:
+    """Name shown in GNOME Settings → Keyboard → Custom Shortcuts."""
+    if action in LAYOUT_ACTIONS:
+        return _("Monitor: {layout} layout").format(layout=title(action))
+    return _("Monitor: {action}").format(action=title(action))
 
 
 def _available() -> bool:
@@ -141,19 +153,20 @@ def get(action: str) -> str | None:
 
 def set(action: str, accel: str | None) -> None:
     if not _available():
-        raise RuntimeError("GNOME media-keys schema not available")
+        raise RuntimeError(_("GNOME keyboard shortcut settings are not available"))
     if accel:
         for a in filter(None, (accel, keypad_twin(accel))):
             taken = conflicts(a, action)
             if taken:
-                raise ValueError(f"{label(a)} is already used by: "
-                                 + ", ".join(taken))
+                raise ValueError(_("{keys} is already used by: {users}").format(
+                    keys=label(a), users=", ".join(taken)))
     root = Gio.Settings.new(SCHEMA)
     paths = list(root.get_strv("custom-keybindings"))
-    name, cmd, _ = ACTIONS[action]
+    name, cmd = gnome_name(action), ACTIONS[action][1]
     entries = [(BASE + PREFIX + action + "/", accel, name),
                (BASE + PREFIX + action + KEYPAD_SUFFIX + "/",
-                keypad_twin(accel), name + " (number pad)")]
+                keypad_twin(accel),
+                _("{name} (number pad)").format(name=name))]
     for path, binding, title in entries:
         if binding:
             c = _child(path)

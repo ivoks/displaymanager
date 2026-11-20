@@ -14,6 +14,7 @@ from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
 from . import ddc, shortcuts  # noqa: E402
 from .controller import LAYOUTS, Controller, Layout, save_config  # noqa: E402
+from .i18n import _  # noqa: E402
 
 APP_ID = "io.github.DisplayManager"
 
@@ -34,8 +35,8 @@ class Window(Adw.ApplicationWindow):
         header = Adw.HeaderBar()
         self.spinner = Adw.Spinner(visible=False)
         refresh = Gtk.Button(icon_name="view-refresh-symbolic",
-                             tooltip_text="Refresh monitor state")
-        refresh.connect("clicked", lambda *_: self.refresh(full=True))
+                             tooltip_text=_("Refresh monitor state"))
+        refresh.connect("clicked", lambda *a: self.refresh(full=True))
         header.pack_start(refresh)
         header.pack_end(self.spinner)
         view.add_top_bar(header)
@@ -48,11 +49,11 @@ class Window(Adw.ApplicationWindow):
         sc_page = Adw.PreferencesPage()
         adv_page = Adw.PreferencesPage()
         stack = Adw.ViewStack()
-        stack.add_titled_with_icon(page, "display", "Display",
+        stack.add_titled_with_icon(page, "display", _("Display"),
                                    "video-display-symbolic")
-        stack.add_titled_with_icon(sc_page, "shortcuts", "Shortcuts",
+        stack.add_titled_with_icon(sc_page, "shortcuts", _("Shortcuts"),
                                    "input-keyboard-symbolic")
-        stack.add_titled_with_icon(adv_page, "advanced", "Advanced",
+        stack.add_titled_with_icon(adv_page, "advanced", _("Advanced"),
                                    "applications-engineering-symbolic")
         view.set_content(stack)
         switcher = Adw.ViewSwitcher(stack=stack,
@@ -70,15 +71,15 @@ class Window(Adw.ApplicationWindow):
 
         # --- monitor ------------------------------------------------------
         g = Adw.PreferencesGroup()
-        self.mon_row = Adw.ActionRow(title="Looking for monitor…")
+        self.mon_row = Adw.ActionRow(title=_("Looking for monitor…"))
         self.mon_row.add_prefix(Gtk.Image(icon_name=APP_ID + "-symbolic",
                                           pixel_size=32))
         g.add(self.mon_row)
         page.add(g)
 
         # --- quick switch ---------------------------------------------------
-        g = Adw.PreferencesGroup(title="Switch")
-        self.switch_btn = Gtk.Button(label="Switch Computer",
+        g = Adw.PreferencesGroup(title=_("Switch"))
+        self.switch_btn = Gtk.Button(label=_("Switch Computer"),
                                      css_classes=["pill", "suggested-action"],
                                      halign=Gtk.Align.CENTER)
         self.switch_btn.connect("clicked", self.on_switch)
@@ -86,18 +87,18 @@ class Window(Adw.ApplicationWindow):
         page.add(g)
         g = Adw.PreferencesGroup()
         self.usb_row = Adw.ActionRow(
-            title="Keyboard &amp; Mouse",
-            subtitle="Hand the monitor's USB hub to the other computer")
-        self.usb_btn = Gtk.Button(label="Move", valign=Gtk.Align.CENTER)
+            title=GLib.markup_escape_text(_("Keyboard & Mouse")),
+            subtitle=_("Hand the monitor’s USB hub to the other computer"))
+        self.usb_btn = Gtk.Button(label=_("Move"), valign=Gtk.Align.CENTER)
         self.usb_btn.connect("clicked", self.on_usb)
         self.usb_row.add_suffix(self.usb_btn)
         g.add(self.usb_row)
         page.add(g)
 
         # --- layout ---------------------------------------------------------
-        g = Adw.PreferencesGroup(title="Layout",
-                                 description="How the screen is shared between "
-                                             "the two inputs")
+        g = Adw.PreferencesGroup(title=_("Layout"),
+                                 description=_("How the screen is shared "
+                                               "between the two inputs"))
         self.layout_box = Gtk.FlowBox(selection_mode=Gtk.SelectionMode.NONE,
                                       homogeneous=True, column_spacing=6,
                                       row_spacing=6, max_children_per_line=4,
@@ -116,40 +117,42 @@ class Window(Adw.ApplicationWindow):
         g.add(self.layout_box)
         page.add(g)
         g = Adw.PreferencesGroup()
-        r = Adw.ActionRow(title="Swap Inputs")
+        r = Adw.ActionRow(title=_("Swap Inputs"))
         b = Gtk.Button(icon_name="object-flip-horizontal-symbolic",
-                       valign=Gtk.Align.CENTER, tooltip_text="Swap")
-        b.connect("clicked", lambda *_: self.run(self.ctl.swap_video,
-                                                 "Swapped left and right"))
+                       valign=Gtk.Align.CENTER, tooltip_text=_("Swap"))
+        b.connect("clicked", lambda *a: self.run(self.ctl.swap_video,
+                                                 _("Swapped the inputs")))
         r.add_suffix(b)
         r.set_activatable_widget(b)
         g.add(r)
-        self.right_row = Adw.ComboRow(title="Second Input",
-                                      subtitle="Right side, or the inset",
+        self.right_row = Adw.ComboRow(title=_("Second Input"),
+                                      subtitle=_("Right side, or the inset"),
                                       model=self.input_model)
         self.right_row.connect("notify::selected", self.on_right_input)
         g.add(self.right_row)
         page.add(g)
 
         # --- inputs ---------------------------------------------------------
-        g = Adw.PreferencesGroup(title="Computers",
-                                 description="Which monitor input each computer "
-                                             "is plugged into")
-        self.this_row = Adw.ComboRow(title="This Computer",
+        g = Adw.PreferencesGroup(title=_("Computers"),
+                                 description=_("Which monitor input each "
+                                               "computer is plugged into"))
+        self.this_row = Adw.ComboRow(title=_("This Computer"),
                                      model=self.input_model)
-        self.other_row = Adw.ComboRow(title="Other Computer",
+        self.other_row = Adw.ComboRow(title=_("Other Computer"),
                                       model=self.input_model)
-        self.full_row = Adw.ComboRow(title="Show Full Screen",
-                                     subtitle="Select the active input directly",
+        self.full_row = Adw.ComboRow(title=_("Show Full Screen"),
+                                     subtitle=_("Select the active input "
+                                                "directly"),
                                      model=self.input_model)
         self.this_row.connect("notify::selected", self.on_role, "this_input")
         self.other_row.connect("notify::selected", self.on_role, "other_input")
         self.full_row.connect("notify::selected", self.on_full_input)
-        detect = Gtk.Button(label="Detect", valign=Gtk.Align.CENTER,
-                            tooltip_text="Work out which input this computer is plugged into")
+        detect = Gtk.Button(label=_("Detect"), valign=Gtk.Align.CENTER,
+                            tooltip_text=_("Work out which input this "
+                                           "computer is plugged into"))
         detect.connect("clicked", self.on_detect_this)
         self.this_row.add_suffix(detect)
-        self.other_name = Adw.EntryRow(title="Other Computer Name",
+        self.other_name = Adw.EntryRow(title=_("Other Computer Name"),
                                        show_apply_button=True)
         self.other_name.connect("apply", self.on_rename)
         for w in (self.this_row, self.other_row, self.other_name, self.full_row):
@@ -158,20 +161,20 @@ class Window(Adw.ApplicationWindow):
 
         # --- shortcuts tab ---------------------------------------------------
         g = Adw.PreferencesGroup(
-            title="General",
-            description="System-wide GNOME shortcuts. Change the keys in "
-                        "Settings → Keyboard → Custom Shortcuts.")
+            title=_("General"),
+            description=_("System-wide GNOME shortcuts. Change the keys in "
+                          "Settings → Keyboard → Custom Shortcuts."))
         self.sc_rows = {}
-        for key, (name, _cmd, default) in shortcuts.ACTIONS.items():
+        for key, (_title, _cmd, default) in shortcuts.ACTIONS.items():
             if key in shortcuts.LAYOUT_ACTIONS:
                 continue
-            g.add(self._shortcut_row(
-                key, name.split(": ", 1)[1].capitalize(), default))
+            g.add(self._shortcut_row(key, shortcuts.title(key), default))
         sc_page.add(g)
 
-        g = Adw.PreferencesGroup(title="Layouts",
-                                 description="Jump straight to a screen layout")
-        all_btn = Gtk.Button(label="Enable All", css_classes=["flat"],
+        g = Adw.PreferencesGroup(title=_("Layouts"),
+                                 description=_("Jump straight to a screen "
+                                               "layout"))
+        all_btn = Gtk.Button(label=_("Enable All"), css_classes=["flat"],
                              valign=Gtk.Align.CENTER)
         all_btn.connect("clicked", self.on_enable_layout_shortcuts)
         g.set_header_suffix(all_btn)
@@ -184,16 +187,16 @@ class Window(Adw.ApplicationWindow):
 
         # --- advanced tab ----------------------------------------------------
         g = Adw.PreferencesGroup(
-            title="Raw VCP Access",
-            description="Read or write any DDC/CI feature, e.g. to probe "
-                        "manufacturer-specific codes. Writing the wrong value "
-                        "can change monitor settings.")
-        self.code_entry = Adw.EntryRow(title="Feature code (hex, e.g. E7)")
-        self.val_entry = Adw.EntryRow(title="Value (hex, for Set)")
-        self.raw_row = Adw.ActionRow(title="Result", subtitle="—",
+            title=_("Raw VCP Access"),
+            description=_("Read or write any DDC/CI feature, e.g. to probe "
+                          "manufacturer-specific codes. Writing the wrong "
+                          "value can change monitor settings."))
+        self.code_entry = Adw.EntryRow(title=_("Feature code (hex, e.g. E7)"))
+        self.val_entry = Adw.EntryRow(title=_("Value (hex, for Set)"))
+        self.raw_row = Adw.ActionRow(title=_("Result"), subtitle="—",
                                      subtitle_selectable=True)
         box = Gtk.Box(spacing=6, valign=Gtk.Align.CENTER)
-        for label, cb in (("Get", self.on_raw_get), ("Set", self.on_raw_set)):
+        for label, cb in ((_("Get"), self.on_raw_get), (_("Set"), self.on_raw_set)):
             btn = Gtk.Button(label=label)
             btn.connect("clicked", cb)
             box.append(btn)
@@ -210,7 +213,8 @@ class Window(Adw.ApplicationWindow):
         if lay.kind == "pbp":
             a = round(lay.left * 100)
             return f"{a} : {100 - a}"
-        return {"single": "Full screen", "pip": "Picture in picture"}[lay.kind]
+        return {"single": _("Full screen"),
+                "pip": _("Picture in picture")}[lay.kind]
 
     def _layout_button(self, lay: Layout) -> Gtk.ToggleButton:
         area = Gtk.DrawingArea(content_width=96, content_height=44,
@@ -286,16 +290,17 @@ class Window(Adw.ApplicationWindow):
 
     def run(self, fn, ok_msg: str | None = None, then_refresh: bool = True):
         def done(res):
-            self.toast(res if isinstance(res, str) else ok_msg or "Done")
+            self.toast(res if isinstance(res, str) else ok_msg or _("Done"))
             if then_refresh:
                 GLib.timeout_add(2500, lambda: (self.refresh(), False)[1])
         self.bg(fn, done)
 
     def on_error(self, exc: Exception) -> None:
         msg = str(exc)
-        if "permission denied" in msg.lower():
-            self.banner.set_title("No access to the monitor's I2C bus. Run: "
-                                  "sudo usermod -aG i2c $USER, then log out and in.")
+        if isinstance(exc, ddc.DDCAccessError):
+            self.banner.set_title(_("No access to the monitor’s I2C bus. Run "
+                                    "“sudo usermod -aG i2c $USER”, then log "
+                                    "out and back in."))
             self.banner.set_revealed(True)
         self.toast(msg)
 
@@ -310,7 +315,7 @@ class Window(Adw.ApplicationWindow):
         self.bg(work, self._apply_state, self._connect_failed)
 
     def _connect_failed(self, exc: Exception) -> None:
-        self.mon_row.set_title("Monitor not reachable")
+        self.mon_row.set_title(_("Monitor not reachable"))
         self.mon_row.set_subtitle(GLib.markup_escape_text(str(exc)))
         self.on_error(exc)
 
@@ -349,23 +354,26 @@ class Window(Adw.ApplicationWindow):
         finally:
             self._updating = False
 
-        parts = [f"Serial {mon.serial}", f"i2c-{mon.bus}"]
+        parts = [_("Serial {serial}").format(serial=mon.serial),
+                 f"i2c-{mon.bus}"]
         if st.input is not None:
-            parts.append("Showing " + self.ctl.input_label(st.input))
+            parts.append(_("Showing {input}").format(
+                input=self.ctl.input_label(st.input)))
         lay = next((x for x in LAYOUTS if x.code == st.pxp_raw), None)
         if lay and lay.kind != "single":
             parts.append(lay.title)
             if st.right_input is not None:
-                parts.append("second: " + self.ctl.input_label(st.right_input))
+                parts.append(_("second: {input}").format(
+                    input=self.ctl.input_label(st.right_input)))
         self.mon_row.set_title(mon.model)
         self.mon_row.set_subtitle(GLib.markup_escape_text(" · ".join(parts)))
         self.usb_row.set_subtitle({
-            True: "Connected to this computer",
-            False: "Connected to the other computer",
-            None: "Hand the monitor's USB hub to the other computer",
+            True: _("Connected to this computer"),
+            False: _("Connected to the other computer"),
+            None: _("Hand the monitor’s USB hub to the other computer"),
         }[st.usb_here])
-        self.switch_btn.set_label("Move Keyboard & Mouse" if st.pbp
-                                  else "Switch Computer")
+        self.switch_btn.set_label(_("Move Keyboard & Mouse") if st.pbp
+                                  else _("Switch Computer"))
         # With two inputs on screen the big button already moves the
         # keyboard and mouse, so the row only shows where they are.
         self.usb_btn.set_visible(not st.pbp)
@@ -381,14 +389,15 @@ class Window(Adw.ApplicationWindow):
             here = self.ctl.usb_here()
             if here is None:
                 self.ctl.toggle_usb()
-                return "Toggled keyboard and mouse"
+                return _("Toggled keyboard and mouse")
             return self.ctl.set_usb(not here)
         self.run(work)
 
     def on_layout(self, btn, lay: Layout):
         if self._updating or not btn.get_active():
             return
-        self.run(lambda: self.ctl.set_layout(lay.code), f"Layout: {lay.title}")
+        self.run(lambda: self.ctl.set_layout(lay.code),
+                 _("Layout: {layout}").format(layout=lay.title))
 
     def on_role(self, row, _p, key):
         if self._updating:
@@ -406,7 +415,8 @@ class Window(Adw.ApplicationWindow):
         if i < len(self.inputs):
             code = self.inputs[i]
             self.run(lambda: self.ctl.set_input(code),
-                     f"Switching to {self.ctl.input_label(code)}")
+                     _("Switching to {input}").format(
+                         input=self.ctl.input_label(code)))
 
     def on_right_input(self, row, _p):
         if self._updating:
@@ -415,30 +425,33 @@ class Window(Adw.ApplicationWindow):
         if i < len(self.inputs):
             code = self.inputs[i]
             self.run(lambda: self.ctl.set_right_input(code),
-                     f"Right side: {self.ctl.input_label(code)}")
+                     _("Second input: {input}").format(
+                         input=self.ctl.input_label(code)))
 
     def on_detect_this(self, _b):
         def done(res):
             code, why = res
             if code is None:
-                self.toast(f"Couldn't tell which input this is ({why}); "
-                           "choose it from the list")
+                self.toast(_("Couldn’t tell which input this is ({reason}); "
+                             "choose it from the list").format(reason=why))
                 return
             if code not in self.inputs:
-                self.toast(f"Detected input 0x{code:02X} is not in the list")
+                self.toast(_("Detected input {code} is not in the list")
+                           .format(code=f"0x{code:02X}"))
                 return
             self.ctl.cfg["this_input"] = code
             save_config(self.ctl.cfg)
             self._updating = True
             self.this_row.set_selected(self.inputs.index(code))
             self._updating = False
-            self.toast(f"This computer: {self.ctl.input_label(code)}")
+            self.toast(_("This computer: {input}").format(
+                input=self.ctl.input_label(code)))
         self.bg(self.ctl.detect_this_input, done)
 
     def on_rename(self, entry):
         other = self.ctl.cfg.get("other_input")
         if other is None:
-            self.toast("Pick the other computer's input first")
+            self.toast(_("Pick the other computer’s input first"))
             return
         name = entry.get_text().strip()
         labels = self.ctl.cfg["input_labels"]
@@ -462,10 +475,11 @@ class Window(Adw.ApplicationWindow):
     def _update_shortcut_subtitle(self, row, key: str, accel: str) -> None:
         text = shortcuts.label(accel)
         if shortcuts.keypad_twin(accel):
-            text += " (also on the number pad)"
+            text += " " + _("(also on the number pad)")
         taken = shortcuts.conflicts(accel, key)
         if taken:
-            text += " · already used by " + ", ".join(taken)
+            text += " · " + _("already used by {users}").format(
+                users=", ".join(taken))
         row.set_subtitle(GLib.markup_escape_text(text))
 
     def on_enable_layout_shortcuts(self, _btn):
@@ -476,8 +490,9 @@ class Window(Adw.ApplicationWindow):
                 row.set_active(True)        # triggers on_shortcut
                 if not row.get_active():
                     failed.append(row.get_title())
-        self.toast("Couldn't enable: " + ", ".join(failed) if failed
-                   else "Layout shortcuts enabled")
+        self.toast(_("Couldn’t enable: {shortcuts}").format(
+            shortcuts=", ".join(failed)) if failed
+            else _("Layout shortcuts enabled"))
 
     def on_shortcut(self, row, _p, key):
         if self._updating:
@@ -496,7 +511,7 @@ class Window(Adw.ApplicationWindow):
         try:
             return int(self.code_entry.get_text().strip(), 16)
         except ValueError:
-            self.toast("Enter a feature code in hex")
+            self.toast(_("Enter a feature code in hex"))
             return None
 
     def on_raw_get(self, _b):
@@ -506,8 +521,9 @@ class Window(Adw.ApplicationWindow):
 
         def done(v):
             self.raw_row.set_subtitle(
-                f"VCP {code:02X}: value 0x{v.value:04X}  raw "
-                + " ".join(f"{b:02X}" for b in v.raw))
+                _("VCP {code}: value {value}, raw {raw}").format(
+                    code=f"{code:02X}", value=f"0x{v.value:04X}",
+                    raw=" ".join(f"{b:02X}" for b in v.raw)))
         self.bg(lambda: ddc.getvcp(self.ctl.bus, code), done,
                 lambda e: self.raw_row.set_subtitle(
                     GLib.markup_escape_text(str(e))))
@@ -519,10 +535,11 @@ class Window(Adw.ApplicationWindow):
         try:
             val = int(self.val_entry.get_text().strip(), 16)
         except ValueError:
-            self.toast("Enter a value in hex")
+            self.toast(_("Enter a value in hex"))
             return
         self.run(lambda: ddc.setvcp(self.ctl.bus, code, val),
-                 f"Wrote 0x{val:X} to VCP {code:02X}")
+                 _("Wrote {value} to VCP {code}").format(
+                     value=f"0x{val:X}", code=f"{code:02X}"))
 
 
 class App(Adw.Application):

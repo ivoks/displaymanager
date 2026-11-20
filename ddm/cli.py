@@ -9,6 +9,7 @@ import sys
 
 from . import ddc
 from .controller import LAYOUT_BY_CODE, Controller, find_layout
+from .i18n import _
 
 
 def _notify(msg: str) -> None:
@@ -32,33 +33,47 @@ def _notify(msg: str) -> None:
         pass
 
 
+def _table(rows: list[tuple[str, str]]) -> None:
+    """Print 'Label:  value' rows aligned to the longest (translated) label."""
+    width = max(len(label) for label, _value in rows) + 2
+    for label, value in rows:
+        print(f"{label:{width}}{value}")
+
+
 def main(argv: list[str]) -> int:
-    p = argparse.ArgumentParser(prog="displaymanager",
-                                description="Control a Dell monitor's inputs, "
-                                            "PBP and KVM over DDC/CI. "
-                                            "Run without arguments for the GUI.")
+    p = argparse.ArgumentParser(
+        prog="displaymanager",
+        description=_("Control a monitor's inputs, screen layout and KVM over "
+                      "DDC/CI. Run without arguments for the graphical "
+                      "application."))
     p.add_argument("-q", "--quiet", action="store_true",
-                   help="no desktop notification")
+                   help=_("don't show a desktop notification"))
     sub = p.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("status", help="show monitor state")
-    sub.add_parser("switch", help="smart switch: move KVM in PBP, "
-                                  "otherwise flip full-screen input")
-    s = sub.add_parser("usb", help="keyboard & mouse: here, away or toggle")
+    sub.add_parser("status", help=_("show the monitor's state"))
+    sub.add_parser("switch", help=_("with two inputs on screen move the "
+                                    "keyboard and mouse, otherwise switch "
+                                    "the full-screen input"))
+    s = sub.add_parser("usb", help=_("keyboard and mouse: here, away or "
+                                     "toggle"))
     s.add_argument("where", nargs="?", default="toggle",
                    choices=["here", "away", "toggle"])
-    sub.add_parser("swap", help="swap PBP left/right")
-    s = sub.add_parser("pbp", help="picture-by-picture on/off/toggle")
+    sub.add_parser("swap", help=_("swap the two inputs"))
+    s = sub.add_parser("pbp", help=_("side by side: on (last used layout), "
+                                     "off or toggle"))
     s.add_argument("state", choices=["on", "off", "toggle"])
-    s = sub.add_parser("layout", help="screen layout: list, next, or a name "
-                                      "(single, 50-50, 75-25, 80-20, 25-75, "
-                                      "20-80, pip-small, pip-large)")
+    s = sub.add_parser("layout", help=_(
+        "screen layout: list, next, or a name (single, 50-50, 75-25, 80-20, "
+        "25-75, 20-80, pip-small, pip-large)"))
     s.add_argument("name", nargs="?", default="list")
-    s = sub.add_parser("input", help="select input by hex code, e.g. 0x1b")
+    s = sub.add_parser("input", help=_("select the main input by hex code, "
+                                       "e.g. 0x0f"))
     s.add_argument("code")
-    s = sub.add_parser("right", help="select PBP right-side input, e.g. 0x19")
+    s = sub.add_parser("right", help=_("select the second input (right side "
+                                       "or inset) by hex code, e.g. 0x19"))
     s.add_argument("code")
-    sub.add_parser("inputs", help="list inputs reported by the monitor")
-    sub.add_parser("detect", help="work out which input this computer uses")
+    sub.add_parser("inputs", help=_("list the inputs the monitor reports"))
+    sub.add_parser("detect", help=_("work out which input this computer "
+                                    "is plugged into"))
     a = p.parse_args(argv)
 
     ctl = Controller()
@@ -67,31 +82,37 @@ def main(argv: list[str]) -> int:
         msg = None
         if a.cmd == "status":
             st = ctl.status()
-            print(f"Monitor:  {mon.model}  serial {mon.serial}  "
-                  f"{mon.connector}  /dev/i2c-{mon.bus}")
-            print(f"Input:    {ctl.input_label(st.input)} (0x{st.input:02X})"
-                  if st.input is not None else f"Input:    ? {st.error}")
+            rows = [(_("Monitor:"), f"{mon.model}  {mon.serial}  "
+                                    f"{mon.connector}  /dev/i2c-{mon.bus}")]
+            rows.append((_("Input:"),
+                         f"{ctl.input_label(st.input)} (0x{st.input:02X})"
+                         if st.input is not None else f"? {st.error}"))
             lay = LAYOUT_BY_CODE.get(st.pxp_raw)
-            print(f"Layout:   {lay.title if lay else 'unknown'} "
-                  f"(E9=0x{st.pxp_raw:02X})"
-                  if st.pxp_raw is not None else "Layout:   unknown")
+            rows.append((_("Layout:"),
+                         f"{lay.title if lay else _('unknown')} "
+                         f"(E9=0x{st.pxp_raw:02X})"
+                         if st.pxp_raw is not None else _("unknown")))
             if st.right_input is not None:
-                print(f"Right:    {ctl.input_label(st.right_input)} "
-                      f"(0x{st.right_input:02X})")
-            kvm = {True: "this computer", False: "other computer",
-                   None: "unknown"}[st.usb_here]
-            print(f"USB/KVM:  {kvm}")
-            for k in ("this_input", "other_input"):
-                v = ctl.cfg.get(k)
-                print(f"{k.split('_')[0].capitalize() + ':':10}{ctl.input_label(v) if v is not None else 'not set'}")
+                rows.append((_("Second input:"),
+                             f"{ctl.input_label(st.right_input)} "
+                             f"(0x{st.right_input:02X})"))
+            rows.append((_("Keyboard & mouse:"), {
+                True: _("this computer"), False: _("other computer"),
+                None: _("unknown")}[st.usb_here]))
+            for key, label in (("this_input", _("This computer:")),
+                               ("other_input", _("Other computer:"))):
+                v = ctl.cfg.get(key)
+                rows.append((label, ctl.input_label(v) if v is not None
+                             else _("not set")))
+            _table(rows)
             return 0
         if a.cmd == "detect":
             code, why = ctl.detect_this_input()
             if code is None:
-                print(f"Could not tell: {why}")
+                print(_("Could not tell: {reason}").format(reason=why))
                 return 1
-            print(f"This computer: {ctl.input_label(code)} (0x{code:02X}) "
-                  f"[{why}]")
+            print(_("This computer: {input} ({code}) [{reason}]").format(
+                input=ctl.input_label(code), code=f"0x{code:02X}", reason=why))
             return 0
         if a.cmd == "inputs":
             for c in ctl.supported_inputs(refresh=True):
@@ -104,49 +125,53 @@ def main(argv: list[str]) -> int:
                 here = ctl.usb_here()
                 if here is None:
                     ctl.toggle_usb()
-                    msg = "Toggled keyboard and mouse"
+                    msg = _("Toggled keyboard and mouse")
                 else:
                     msg = ctl.set_usb(not here)
             else:
                 msg = ctl.set_usb(a.where == "here")
         elif a.cmd == "swap":
             ctl.swap_video()
-            msg = "Swapped left and right"
+            msg = _("Swapped the inputs")
         elif a.cmd == "pbp":
             on = (not ctl.is_pbp()) if a.state == "toggle" else a.state == "on"
             ctl.set_pbp(on)
-            msg = "Side by side " + ("on" if on else "off")
+            msg = _("Side by side on") if on else _("Side by side off")
         elif a.cmd == "layout":
             if a.name == "list":
                 cur = ctl.get_layout()
-                for lay in ctl.supported_layouts():
+                layouts = ctl.supported_layouts()
+                width = max(len(lay.title) for lay in layouts) + 2
+                for lay in layouts:
                     mark = "*" if lay.code == cur else " "
-                    print(f"{mark} {lay.key:10} {lay.title:13} 0x{lay.code:02X}")
+                    print(f"{mark} {lay.key:10} {lay.title:{width}}"
+                          f"0x{lay.code:02X}")
                 return 0
             if a.name == "next":
                 lay = ctl.next_layout()
             else:
                 lay = find_layout(a.name)
                 if lay is None:
-                    print(f"error: unknown layout {a.name!r}; "
-                          "try 'layout list'", file=sys.stderr)
+                    print(_("error: unknown layout “{name}”; try “layout "
+                            "list”").format(name=a.name), file=sys.stderr)
                     return 2
                 ctl.set_layout(lay.code)
-            msg = f"Layout: {lay.title}"
+            msg = _("Layout: {layout}").format(layout=lay.title)
         elif a.cmd == "input":
             code = int(a.code, 16)
             ctl.set_input(code)
-            msg = f"Switched to {ctl.input_label(code)}"
+            msg = _("Switched to {input}").format(input=ctl.input_label(code))
         elif a.cmd == "right":
             code = int(a.code, 16)
             ctl.set_right_input(code)
-            msg = f"Right side: {ctl.input_label(code)}"
+            msg = _("Second input: {input}").format(
+                input=ctl.input_label(code))
         print(msg)
         if not a.quiet:
             _notify(msg)
         return 0
     except ddc.DDCError as e:
-        print(f"error: {e}", file=sys.stderr)
+        print(_("error: {message}").format(message=e), file=sys.stderr)
         if not a.quiet:
-            _notify(f"Error: {e}")
+            _notify(_("Error: {message}").format(message=e))
         return 1

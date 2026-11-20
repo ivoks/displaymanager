@@ -1,0 +1,7 @@
+# Files with translatable strings (paths relative to the project root).
+ddm/cli.py
+ddm/controller.py
+ddm/ddc.py
+ddm/gui.py
+ddm/shortcuts.py
+data/io.github.DisplayManager.desktop.in

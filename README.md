@@ -10,7 +10,7 @@ It talks to the monitor over **DDC/CI** (VESA MCCS) using `ddcutil`.
 ## Install
 
 ```sh
-sudo apt install ddcutil python3-gi gir1.2-adw-1
+sudo apt install ddcutil python3-gi gir1.2-adw-1 gettext make
 sudo usermod -aG i2c $USER        # then log out and back in
 ./install.sh                      # ~/.local/bin + app grid entry
 ```
@@ -99,6 +99,29 @@ downstream/daisy-chain port: that one only links you to the Mac's
 Thunderbolt domain) and the keyboard/mouse are plugged into the monitor's
 downstream ports. Assign the upstream to the matching video input in the
 monitor's OSD (USB settings / PBP USB switch).
+
+## Translations
+
+Translations use GNU gettext. The template is `po/displaymanager.pot`, each
+language is `po/<lang>.po`, and `po/LINGUAS` lists the languages that are
+built. `make` compiles them into `build/locale` (used when running from the
+source folder) and merges the desktop file's translations; `make install`
+puts them in `<prefix>/share/locale`.
+
+Add a language:
+
+```sh
+msginit -i po/displaymanager.pot -l de_DE.UTF-8 -o po/de.po
+echo de >> po/LINGUAS
+# translate po/de.po, keeping {placeholders} unchanged
+make && LANGUAGE=de ./displaymanager
+```
+
+After changing strings in the code, `make update-po` regenerates the
+template and merges it into every `po/*.po`. `msgfmt --check` (run by
+`make`) verifies that placeholders match.
+
+Available: Croatian (`hr`).
 
 ## License
 

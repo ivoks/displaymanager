@@ -7,3 +7,4 @@ __pycache__/
 /debian/*.debhelper.log
 /debian/debhelper-build-stamp
 /debian/*.debhelper
+/build/
