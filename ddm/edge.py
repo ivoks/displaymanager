@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Ante Karamatic
-"""Talk to GNOME Shell about the edge-switch extension.
+"""Talk to GNOME Shell about the DisplayManager extension.
 
 Wayland doesn't let applications see where the pointer is, so switching the
 keyboard and mouse at the screen edge is done by a small GNOME Shell
 extension (extension/displaymanager@ivoks.github.io).  The extension reads
 "edge_switch" and "connector" from our config file and calls
-`displaymanager cross <edge>`; this module only enables or disables it.
+`displaymanager cross <edge>`.  It also provides the on-screen pop-up
+(see osd.py).  This module only enables or disables it.
 """
 
 from __future__ import annotations

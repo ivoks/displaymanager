@@ -102,6 +102,14 @@ Thunderbolt domain) and the keyboard/mouse are plugged into the monitor's
 downstream ports. Assign the upstream to the matching video input in the
 monitor's OSD (USB settings / PBP USB switch).
 
+## On-screen feedback
+
+Actions from keyboard shortcuts or the screen edge show GNOME's own
+on-screen pop-up (the one used for volume keys) on the monitor, with a level
+bar for brightness, contrast and volume. GNOME Shell only lets its own
+components use that pop-up, so it is drawn by the DisplayManager extension;
+without it a regular notification is shown. Turn it off on the Shortcuts tab.
+
 ## Switching at the screen edge
 
 With two computers side by side, DisplayManager can hand the keyboard and

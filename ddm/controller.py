@@ -121,6 +121,7 @@ DEFAULTS = {
     "last_layout": 0x24,        # multi-view layout restored by "pbp on"
     "panel_width": 5120,        # native width, for telling PBP sides apart
     "edge_switch": False,       # move the KVM when the pointer hits the edge
+    "osd": True,                # on-screen pop-up for shortcut/edge actions
     "connector": None,          # e.g. "DP-1"; read by the GNOME extension
     # USB devices that live behind the monitor's KVM-switched hub; if any is
     # present on this machine, the keyboard/mouse are here.  (U4025QW:

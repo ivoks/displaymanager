@@ -10,6 +10,11 @@
 // decides from the monitor's current layout whether that edge borders the
 // other computer and, if so, hands it the keyboard and mouse.
 //
+// It also exports io.github.DisplayManager.ShowOSD on GNOME Shell's bus
+// connection (object /io/github/DisplayManager), so DisplayManager can show
+// GNOME's on-screen pop-up (the one used for volume keys); the Shell's own
+// ShowOSD method only accepts calls from GNOME components.
+//
 // Settings come from DisplayManager's config file:
 //   ~/.config/displaymanager/config.json  {"edge_switch": true, "connector": "DP-1"}
 
@@ -25,6 +30,19 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 const PRESSURE_THRESHOLD = 100;     // px pushed into the edge…
 const PRESSURE_TIMEOUT = 1000;      // …within this many ms
 const COOLDOWN_MS = 2000;           // ignore further pushes while switching
+
+const DBUS_PATH = '/io/github/DisplayManager';
+const DBUS_INTERFACE = `
+<node>
+  <interface name="io.github.DisplayManager">
+    <!-- level: 0…1 shows a level bar, a negative value shows none -->
+    <method name="ShowOSD">
+      <arg type="s" direction="in" name="icon"/>
+      <arg type="s" direction="in" name="label"/>
+      <arg type="d" direction="in" name="level"/>
+    </method>
+  </interface>
+</node>`;
 
 export default class EdgeSwitchExtension extends Extension {
     enable() {
@@ -51,10 +69,17 @@ export default class EdgeSwitchExtension extends Extension {
         this._monitorsChangedId = Main.layoutManager.connect(
             'monitors-changed', () => this._rebuild());
 
+        this._dbus = Gio.DBusExportedObject.wrapJSObject(DBUS_INTERFACE, this);
+        this._dbus.export(Gio.DBus.session, DBUS_PATH);
+
         this._rebuild();
     }
 
     disable() {
+        if (this._dbus) {
+            this._dbus.unexport();
+            this._dbus = null;
+        }
         this._clear();
         if (this._dirMonitor) {
             this._dirMonitor.disconnect(this._dirMonitorId);
@@ -66,6 +91,20 @@ export default class EdgeSwitchExtension extends Extension {
             this._monitorsChangedId = 0;
         }
         this._configFile = null;
+    }
+
+    // D-Bus: io.github.DisplayManager.ShowOSD
+    ShowOSD(icon, label, level) {
+        const gicon = icon ? Gio.Icon.new_for_string(icon) : null;
+        const value = level >= 0 ? Math.min(level, 1) : null;
+        const connector = this._readConfig().connector;
+        const index = connector
+            ? global.backend.get_monitor_manager().get_monitor_for_connector(connector)
+            : -1;
+        if (index >= 0)
+            Main.osdWindowManager.showOne(index, gicon, label, value, 1);
+        else
+            Main.osdWindowManager.showAll(gicon, label, value, 1);
     }
 
     _readConfig() {
@@ -130,7 +169,7 @@ export default class EdgeSwitchExtension extends Extension {
         const exe = GLib.find_program_in_path('displaymanager') ??
             GLib.build_filenamev([GLib.get_home_dir(), '.local', 'bin', 'displaymanager']);
         try {
-            const proc = Gio.Subprocess.new([exe, '-q', 'cross', edge],
+            const proc = Gio.Subprocess.new([exe, 'cross', edge],
                 Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE);
             proc.wait_async(null, null);
         } catch (e) {

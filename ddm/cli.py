@@ -7,30 +7,9 @@ from __future__ import annotations
 import argparse
 import sys
 
-from . import ddc
+from . import ddc, osd
 from .controller import LAYOUT_BY_CODE, LEVELS, Controller, find_layout
 from .i18n import _
-
-
-def _notify(msg: str) -> None:
-    """Best-effort desktop notification so shortcut presses give feedback."""
-    try:
-        import gi
-        gi.require_version("Gio", "2.0")
-        from gi.repository import Gio
-        bus = Gio.bus_get_sync(Gio.BusType.SESSION)
-        from gi.repository import GLib
-        bus.call_sync("org.freedesktop.Notifications",
-                      "/org/freedesktop/Notifications",
-                      "org.freedesktop.Notifications", "Notify",
-                      GLib.Variant("(susssasa{sv}i)",
-                                   ("DisplayManager", 0,
-                                    "video-display-symbolic", msg, "", [],
-                                    {"transient": GLib.Variant("b", True)},
-                                    2000)),
-                      None, Gio.DBusCallFlags.NONE, 2000, None)
-    except Exception:  # noqa: BLE001
-        pass
 
 
 def _table(rows: list[tuple[str, str]]) -> None:
@@ -92,6 +71,7 @@ def main(argv: list[str]) -> int:
     try:
         mon = ctl.connect()
         msg = None
+        icon, level = osd.ICON_DISPLAY, None
         if a.cmd == "status":
             st = ctl.status()
             rows = [(_("Monitor:"), f"{mon.model}  {mon.serial}  "
@@ -147,13 +127,17 @@ def main(argv: list[str]) -> int:
                     value=a.value), file=sys.stderr)
                 return 2
             msg = f"{title}: {value}"
+            _cur, top = ctl.get_level(a.cmd)
+            icon, level = osd.ICON_LEVELS[a.cmd], value / (top or 100)
         elif a.cmd == "cross":
             msg = ctl.cross(a.edge)
             if msg is None:
                 return 0
+            icon = osd.ICON_KEYBOARD
         elif a.cmd == "switch":
             msg = ctl.switch()
         elif a.cmd == "usb":
+            icon = osd.ICON_KEYBOARD
             if a.where == "toggle":
                 here = ctl.usb_here()
                 if here is None:
@@ -199,12 +183,14 @@ def main(argv: list[str]) -> int:
             ctl.set_right_input(code)
             msg = _("Second input: {input}").format(
                 input=ctl.input_label(code))
+        if a.cmd == "switch" and ctl.is_pbp():
+            icon = osd.ICON_KEYBOARD
         print(msg)
         if not a.quiet:
-            _notify(msg)
+            osd.feedback(msg, icon, level, ctl.cfg.get("osd", True))
         return 0
     except ddc.DDCError as e:
         print(_("error: {message}").format(message=e), file=sys.stderr)
         if not a.quiet:
-            _notify(_("Error: {message}").format(message=e))
+            osd.notify(_("Error: {message}").format(message=e))
         return 1

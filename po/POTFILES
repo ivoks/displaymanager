@@ -6,3 +6,4 @@ ddm/edge.py
 ddm/gui.py
 ddm/shortcuts.py
 data/io.github.DisplayManager.desktop.in
+ddm/osd.py

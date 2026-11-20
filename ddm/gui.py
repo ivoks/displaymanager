@@ -199,6 +199,13 @@ class Window(Adw.ApplicationWindow):
             description=_("System-wide GNOME shortcuts. Change the keys in "
                           "Settings → Keyboard → Custom Shortcuts."))
         self.sc_rows = {}
+        self.osd_row = Adw.SwitchRow(
+            title=_("Show On-Screen Pop-Up"),
+            subtitle=_("When a shortcut or the screen edge changes something; "
+                       "otherwise a notification is shown"),
+            active=bool(self.ctl.cfg.get("osd", True)))
+        self.osd_row.connect("notify::active", self.on_osd_switch)
+        g.add(self.osd_row)
         for key, (_title, _cmd, default) in shortcuts.ACTIONS.items():
             if key in shortcuts.LAYOUT_ACTIONS:
                 continue
@@ -240,6 +247,7 @@ class Window(Adw.ApplicationWindow):
         adv_page.add(g)
 
         self.refresh(full=True)
+        self.bg(self._sync_extension)
 
     # ---------------------------------------------------------------- layouts
     @staticmethod
@@ -473,7 +481,21 @@ class Window(Adw.ApplicationWindow):
             elif res is False:
                 self.toast(_("GNOME Shell couldn’t enable the edge-switch "
                              "extension"))
-        self.bg(lambda: edge.set_enabled(on), done)
+        self.bg(lambda: edge.set_enabled(self._extension_wanted()), done)
+
+    def _extension_wanted(self) -> bool:
+        cfg = self.ctl.cfg
+        return bool(cfg.get("edge_switch") or cfg.get("osd", True))
+
+    def on_osd_switch(self, row, _p):
+        self.ctl.cfg["osd"] = row.get_active()
+        save_config(self.ctl.cfg)
+        self.bg(lambda: edge.set_enabled(self._extension_wanted()))
+
+    def _sync_extension(self):
+        """Keep the extension enabled while a feature needs it."""
+        if self._extension_wanted() and edge.info() and not edge.active():
+            edge.set_enabled(True)
 
     def on_layout(self, btn, lay: Layout):
         if self._updating or not btn.get_active():
