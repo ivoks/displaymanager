@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 import unittest
 
-from ddm import shortcuts as S
+from mullion import shortcuts as S
 
 
 class Accelerators(unittest.TestCase):
@@ -37,6 +37,10 @@ class Defaults(unittest.TestCase):
         taken.add(S.normalize("<Super><Alt>8"))
         for action, (_t, _c, accel) in S.ACTIONS.items():
             self.assertNotIn(S.normalize(accel), taken, action)
+
+    def test_conflicts_without_an_action(self):
+        # Used to crash: the module's own set() shadowed the built-in.
+        self.assertIsInstance(S.conflicts("<Super><Alt>F12"), list)
 
     def test_names(self):
         self.assertEqual(S.gnome_name("usb"), "Monitor: Move keyboard & mouse")

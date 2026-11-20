@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (C) 2026 Ante Karamatic
 //
-// DisplayManager GNOME Shell integration
+// Mullion GNOME Shell integration
 //
 // Wayland doesn't let ordinary applications see the pointer position, so
 // this small extension puts pressure barriers (like GNOME's hot corner) on
-// the outer left and right edges of the monitor DisplayManager controls.
-// Pushing the pointer against one runs `displaymanager cross <edge>`, which
+// the outer left and right edges of the monitor Mullion controls.
+// Pushing the pointer against one runs `mullion cross <edge>`, which
 // decides from the monitor's current layout whether that edge borders the
 // other computer and, if so, hands it the keyboard and mouse.
 //
-// It also exports io.github.DisplayManager.ShowOSD on GNOME Shell's bus
-// connection (object /io/github/DisplayManager), so DisplayManager can show
+// It also exports io.github.ivoks.Mullion.ShowOSD on GNOME Shell's bus
+// connection (object /io/github/ivoks/Mullion), so Mullion can show
 // GNOME's on-screen pop-up (the one used for volume keys); the Shell's own
 // ShowOSD method only accepts calls from GNOME components.
 //
 // And it adds a "Monitor" tile to Quick Settings (see quickmenu.js).
 //
-// Settings come from DisplayManager's config file:
-//   ~/.config/displaymanager/config.json
+// Settings come from Mullion's config file:
+//   ~/.config/mullion/config.json
 //   {"edge_switch": true, "quick_settings": true, "connector": "DP-1"}
 
 import Gio from 'gi://Gio';
@@ -30,16 +30,16 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Layout from 'resource:///org/gnome/shell/ui/layout.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-import {createIndicator, displaymanagerPath} from './quickmenu.js';
+import {createIndicator, mullionPath} from './quickmenu.js';
 
 const PRESSURE_THRESHOLD = 100;     // px pushed into the edge…
 const PRESSURE_TIMEOUT = 1000;      // …within this many ms
 const COOLDOWN_MS = 2000;           // ignore further pushes while switching
 
-const DBUS_PATH = '/io/github/DisplayManager';
+const DBUS_PATH = '/io/github/ivoks/Mullion';
 const DBUS_INTERFACE = `
 <node>
-  <interface name="io.github.DisplayManager">
+  <interface name="io.github.ivoks.Mullion">
     <!-- level: 0…1 shows a level bar, a negative value shows none -->
     <method name="ShowOSD">
       <arg type="s" direction="in" name="icon"/>
@@ -49,13 +49,13 @@ const DBUS_INTERFACE = `
   </interface>
 </node>`;
 
-export default class EdgeSwitchExtension extends Extension {
+export default class MullionExtension extends Extension {
     enable() {
         this._barriers = [];
         this._pressure = [];
         this._lastSwitch = 0;
         this._configFile = Gio.File.new_for_path(GLib.build_filenamev([
-            GLib.get_user_config_dir(), 'displaymanager', 'config.json']));
+            GLib.get_user_config_dir(), 'mullion', 'config.json']));
 
         // The app replaces config.json atomically, so watch the directory.
         const dir = this._configFile.get_parent();
@@ -63,7 +63,7 @@ export default class EdgeSwitchExtension extends Extension {
             dir.make_directory_with_parents(null);
         } catch (e) {
             if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.EXISTS))
-                logError(e, 'DisplayManager: cannot create config directory');
+                logError(e, 'Mullion: cannot create config directory');
         }
         this._dirMonitor = dir.monitor_directory(Gio.FileMonitorFlags.WATCH_MOVES, null);
         this._dirMonitorId = this._dirMonitor.connect('changed', (_m, file, other) => {
@@ -100,7 +100,7 @@ export default class EdgeSwitchExtension extends Extension {
         this._configFile = null;
     }
 
-    // D-Bus: io.github.DisplayManager.ShowOSD
+    // D-Bus: io.github.ivoks.Mullion.ShowOSD
     ShowOSD(icon, label, level) {
         const gicon = icon ? Gio.Icon.new_for_string(icon) : null;
         const value = level >= 0 ? Math.min(level, 1) : null;
@@ -201,11 +201,11 @@ export default class EdgeSwitchExtension extends Extension {
         this._lastSwitch = now;
 
         try {
-            const proc = Gio.Subprocess.new([displaymanagerPath(), 'cross', edge],
+            const proc = Gio.Subprocess.new([mullionPath(), 'cross', edge],
                 Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE);
             proc.wait_async(null, null);
         } catch (e) {
-            logError(e, 'DisplayManager: cannot run displaymanager');
+            logError(e, 'Mullion: cannot run mullion');
         }
     }
 }

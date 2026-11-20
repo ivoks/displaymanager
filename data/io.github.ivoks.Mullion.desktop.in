@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=DisplayManager
+Name=Mullion
 Comment=Switch inputs, screen layouts and KVM on your monitor
-Exec=displaymanager
-Icon=io.github.DisplayManager
+Exec=mullion
+Icon=io.github.ivoks.Mullion
 Terminal=false
 Categories=Settings;HardwareSettings;GTK;
-Keywords=monitor;display;kvm;pbp;pip;ddc;input;layout;
+Keywords=monitor;display;kvm;pbp;pip;ddc;input;layout;split;share;dell;
 StartupNotify=true

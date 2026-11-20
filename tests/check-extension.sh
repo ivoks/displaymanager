@@ -4,7 +4,7 @@
 # that only exist inside GNOME Shell with stubs. Catches syntax errors and
 # mistakes at module load time; behaviour is tested inside GNOME Shell.
 set -e
-ext=${1:-extension/displaymanager@ivoks.github.io}
+ext=${1:-extension/mullion@ivoks.github.io}
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 
@@ -25,10 +25,10 @@ done
 
 cat > "$tmp/check.js" <<'JS'
 import Gio from 'gi://Gio';
-import {EdgeSwitchExtension} from './extension.js';
-import {createIndicator, displaymanagerPath} from './quickmenu.js';
-new EdgeSwitchExtension();
-if (typeof createIndicator !== 'function' || !displaymanagerPath())
+import {MullionExtension} from './extension.js';
+import {createIndicator, mullionPath} from './quickmenu.js';
+new MullionExtension();
+if (typeof createIndicator !== 'function' || !mullionPath())
     throw new Error('quickmenu.js exports missing');
 print('extension modules load OK');
 JS

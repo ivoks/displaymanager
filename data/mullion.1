@@ -1,0 +1,97 @@
+.TH MULLION 1 "November 2026" "mullion 0.1.0" "User Commands"
+.SH NAME
+mullion \- control inputs, screen layouts and KVM on DDC/CI monitors
+.SH SYNOPSIS
+.B mullion
+.br
+.B mullion
+[\fB\-q\fR] \fICOMMAND\fR [\fIARGS\fR]
+.br
+.B mullion \-\-version
+.SH DESCRIPTION
+Without arguments, opens the graphical application. With a command, performs
+the action over DDC/CI using \fBddcutil\fR(1) and exits; this is what the
+optional GNOME keyboard shortcuts, the Quick Settings menu and the screen-edge
+switching run.
+.PP
+After an action, GNOME's on-screen pop-up shows what changed (or a
+notification when the Mullion GNOME Shell extension isn't running).
+.SH COMMANDS
+.TP
+.B status
+Show the monitor, inputs, layout, brightness, contrast, volume and where the
+keyboard and mouse are.
+.TP
+.B state
+The same information as JSON, for the GNOME Quick Settings menu.
+.TP
+.B switch
+With two inputs on screen, move the keyboard and mouse to the other
+computer; otherwise switch the full-screen input between this and the other
+computer.
+.TP
+.BR "usb " [ here | away | toggle ]
+Move the monitor's USB hub (KVM) with the keyboard and mouse.
+.TP
+.BR "layout " [ list | next | \fINAME\fR]
+List or select the screen layout:
+.BR single ,
+.BR 50-50 ,
+.BR 75-25 ,
+.BR 80-20 ,
+.BR 25-75 ,
+.BR 20-80 ,
+.BR pip-small ,
+.BR pip-large .
+.B next
+cycles through the layouts with two inputs.
+.TP
+.BR "pbp on" | off | toggle
+Switch between the last used layout with two inputs and a single input.
+.TP
+.B swap
+Swap the two inputs.
+.TP
+.BI "input " CODE
+Select the main (left or full-screen) input by hex VCP code, e.g. 0x0f.
+.TP
+.BI "second " CODE
+Select the second input (the right side or the inset).
+.TP
+.BR "brightness " [ \fIN\fR | +\fIN\fR | \-\fIN\fR]
+.TQ
+.BR "contrast " [ \fIN\fR | +\fIN\fR | \-\fIN\fR]
+.TQ
+.BR "volume " [ \fIN\fR | +\fIN\fR | \-\fIN\fR]
+Show the value, set it (0\(en100) or change it relative to the current one.
+.TP
+.B inputs
+List the inputs the monitor reports.
+.TP
+.B detect
+Work out which input this computer is plugged into, from the connector
+type, whether USB-C/Thunderbolt video is possible, the inputs on screen and
+the current resolution.
+.TP
+.BR "cross " left | right
+The pointer was pushed against this screen edge: if the other computer's
+picture is on that side, move the keyboard and mouse to it. Run by the GNOME
+Shell extension.
+.SH OPTIONS
+.TP
+.BR \-q ", " \-\-quiet
+Don't show what changed on screen.
+.TP
+.B \-\-version
+Show the version and exit.
+.SH FILES
+.TP
+.I ~/.config/mullion/config.json
+Settings that differ from the defaults: input roles and names, enabled
+features, and VCP codes overriding those of the U4025QW for other models.
+.SH NOTES
+The user needs read/write access to the monitor's /dev/i2c-* device. The
+ddcutil package grants this to the user logged in at the local desktop;
+otherwise add the user to the \fBi2c\fR group.
+.SH SEE ALSO
+.BR ddcutil (1)

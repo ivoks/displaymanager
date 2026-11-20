@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
 /debian/.debhelper/
-/debian/displaymanager/
+/debian/mullion/
 /debian/files
 /debian/*.substvars
 /debian/*.debhelper.log

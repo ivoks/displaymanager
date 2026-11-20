@@ -8,9 +8,21 @@ import argparse
 import json
 import sys
 
-from . import ddc, osd
+from . import __version__, ddc, osd
 from .controller import LAYOUT_BY_CODE, LEVELS, Controller, find_layout
 from .i18n import _
+
+
+def _hex_code(text: str) -> int:
+    """argparse type for input codes such as 0x0f or 0f."""
+    try:
+        code = int(text, 16)
+    except ValueError:
+        code = -1
+    if not 0 <= code <= 0xFF:
+        raise argparse.ArgumentTypeError(
+            _("“{value}” is not an input code such as 0x0f").format(value=text))
+    return code
 
 
 def _table(rows: list[tuple[str, str]]) -> None:
@@ -26,7 +38,7 @@ def _state(ctl: Controller) -> dict:
     st = ctl.status(levels=False)
     if st.error:
         raise ddc.DDCError(st.error)
-    current = LAYOUT_BY_CODE.get(st.pxp_raw)
+    current = LAYOUT_BY_CODE.get(st.layout)
     layouts = [{"key": lay.key, "title": lay.title, "kind": lay.kind}
                for lay in ctl.supported_layouts()]
     return {
@@ -38,24 +50,25 @@ def _state(ctl: Controller) -> dict:
         "usb_here": st.usb_here,
         "main_input": ctl.input_label(st.input) if st.input is not None
         else None,
-        "second_input": ctl.input_label(st.right_input)
-        if st.right_input is not None else None,
+        "second_input": ctl.input_label(st.second_input)
+        if st.second_input is not None else None,
     }
 
 
 def main(argv: list[str]) -> int:
     p = argparse.ArgumentParser(
-        prog="displaymanager",
+        prog="mullion",
         description=_("Control a monitor's inputs, screen layout and KVM over "
                       "DDC/CI. Run without arguments for the graphical "
                       "application."))
     p.add_argument("-q", "--quiet", action="store_true",
-                   help=_("don't show a desktop notification"))
+                   help=_("don't show what changed on screen"))
+    p.add_argument("--version", action="version",
+                   version=f"mullion {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("status", help=_("show the monitor's state"))
-    s = sub.add_parser("state", help=_("machine-readable state, for the "
-                                       "GNOME Quick Settings menu"))
-    s.add_argument("--json", action="store_true", required=True)
+    sub.add_parser("state", help=_("the monitor's state as JSON, for the "
+                                   "GNOME Quick Settings menu"))
     sub.add_parser("switch", help=_("with two inputs on screen move the "
                                     "keyboard and mouse, otherwise switch "
                                     "the full-screen input"))
@@ -73,10 +86,10 @@ def main(argv: list[str]) -> int:
     s.add_argument("name", nargs="?", default="list")
     s = sub.add_parser("input", help=_("select the main input by hex code, "
                                        "e.g. 0x0f"))
-    s.add_argument("code")
-    s = sub.add_parser("right", help=_("select the second input (right side "
-                                       "or inset) by hex code, e.g. 0x19"))
-    s.add_argument("code")
+    s.add_argument("code", type=_hex_code)
+    s = sub.add_parser("second", help=_("select the second input (right side "
+                                        "or inset) by hex code, e.g. 0x19"))
+    s.add_argument("code", type=_hex_code)
     for name, help_text in (
             ("brightness", _("show or set brightness: 0–100, +N or -N")),
             ("contrast", _("show or set contrast: 0–100, +N or -N")),
@@ -109,15 +122,15 @@ def main(argv: list[str]) -> int:
             rows.append((_("Input:"),
                          f"{ctl.input_label(st.input)} (0x{st.input:02X})"
                          if st.input is not None else f"? {st.error}"))
-            lay = LAYOUT_BY_CODE.get(st.pxp_raw)
+            lay = LAYOUT_BY_CODE.get(st.layout)
             rows.append((_("Layout:"),
                          f"{lay.title if lay else _('unknown')} "
-                         f"(E9=0x{st.pxp_raw:02X})"
-                         if st.pxp_raw is not None else _("unknown")))
-            if st.right_input is not None:
+                         f"(E9=0x{st.layout:02X})"
+                         if st.layout is not None else _("unknown")))
+            if st.second_input is not None:
                 rows.append((_("Second input:"),
-                             f"{ctl.input_label(st.right_input)} "
-                             f"(0x{st.right_input:02X})"))
+                             f"{ctl.input_label(st.second_input)} "
+                             f"(0x{st.second_input:02X})"))
             for name, title in LEVELS.items():
                 if name in st.levels:
                     cur, top = st.levels[name]
@@ -158,13 +171,15 @@ def main(argv: list[str]) -> int:
                 return 2
             msg = f"{title}: {value}"
             _cur, top = ctl.get_level(a.cmd)
-            icon, level = osd.ICON_LEVELS[a.cmd], value / (top or 100)
+            icon, level = osd.ICON_LEVELS[a.cmd], value / top
         elif a.cmd == "cross":
             msg = ctl.cross(a.edge)
             if msg is None:
                 return 0
             icon = osd.ICON_KEYBOARD
         elif a.cmd == "switch":
+            if ctl.is_multi():
+                icon = osd.ICON_KEYBOARD
             msg = ctl.switch()
         elif a.cmd == "usb":
             icon = osd.ICON_KEYBOARD
@@ -178,11 +193,12 @@ def main(argv: list[str]) -> int:
             else:
                 msg = ctl.set_usb(a.where == "here")
         elif a.cmd == "swap":
-            ctl.swap_video()
+            ctl.swap()
             msg = _("Swapped the inputs")
         elif a.cmd == "pbp":
-            on = (not ctl.is_pbp()) if a.state == "toggle" else a.state == "on"
-            ctl.set_pbp(on)
+            on = (not ctl.is_multi()) if a.state == "toggle" \
+                else a.state == "on"
+            ctl.set_multi(on)
             msg = _("Side by side on") if on else _("Side by side off")
         elif a.cmd == "layout":
             if a.name == "list":
@@ -205,16 +221,13 @@ def main(argv: list[str]) -> int:
                 ctl.set_layout(lay.code)
             msg = _("Layout: {layout}").format(layout=lay.title)
         elif a.cmd == "input":
-            code = int(a.code, 16)
-            ctl.set_input(code)
-            msg = _("Switched to {input}").format(input=ctl.input_label(code))
-        elif a.cmd == "right":
-            code = int(a.code, 16)
-            ctl.set_right_input(code)
+            ctl.set_input(a.code)
+            msg = _("Switched to {input}").format(
+                input=ctl.input_label(a.code))
+        elif a.cmd == "second":
+            ctl.set_second_input(a.code)
             msg = _("Second input: {input}").format(
-                input=ctl.input_label(code))
-        if a.cmd == "switch" and ctl.is_pbp():
-            icon = osd.ICON_KEYBOARD
+                input=ctl.input_label(a.code))
         print(msg)
         if not a.quiet:
             osd.feedback(msg, icon, level, ctl.cfg.get("osd", True))

@@ -5,14 +5,14 @@ config goes to a temporary directory and output is in English."""
 import os
 import tempfile
 
-os.environ["XDG_CONFIG_HOME"] = tempfile.mkdtemp(prefix="displaymanager-test-")
+os.environ["XDG_CONFIG_HOME"] = tempfile.mkdtemp(prefix="mullion-test-")
 os.environ["LANGUAGE"] = "C"
-os.environ["DISPLAYMANAGER_LOCALEDIR"] = "/nonexistent"
+os.environ["MULLION_LOCALEDIR"] = "/nonexistent"
 os.environ.setdefault("GSETTINGS_BACKEND", "memory")
 
 
 # No test may run the real ddcutil: fail loudly if one tries.
-from ddm import ddc as _ddc  # noqa: E402
+from mullion import ddc as _ddc  # noqa: E402
 
 
 def _no_hardware(args, timeout=15):

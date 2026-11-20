@@ -1,4 +1,4 @@
-displaymanager (0.1.0) resolute; urgency=medium
+mullion (0.1.0) resolute; urgency=medium
 
   * Initial release.
     - GTK 4 / libadwaita UI and CLI for controlling monitors over DDC/CI.

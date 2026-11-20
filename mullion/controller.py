@@ -4,18 +4,22 @@
 
 from __future__ import annotations
 
+import copy
+import fcntl
 import glob
 import json
 import os
 import re
+import tempfile
+import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from . import ddc
 from .i18n import N_, _
 
 _XDG_CONFIG = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
-CONFIG_DIR = os.path.join(_XDG_CONFIG, "displaymanager")
+CONFIG_DIR = os.path.join(_XDG_CONFIG, "mullion")
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.json")
 
 # MCCS standard input codes (VCP 0x60) plus the values Dell uses.
@@ -113,67 +117,102 @@ def _usb_c_video_possible() -> bool:
 DEFAULTS = {
     "monitor_serial": None,     # pick this monitor if several are attached
     "bus": None,                # cached bus once probed
+    "connector": None,          # e.g. "DP-1"; read by the GNOME extension
     "this_input": None,         # VCP 60 value this computer is plugged into
-    "other_input": None,        # VCP 60 value of the other computer (Mac)
+    "other_input": None,        # VCP 60 value of the other computer
     "input_labels": {},         # {"0x1b": "MacBook"}
     "inputs": None,             # cached list of supported input codes
     "layouts": None,            # cached E9 values the monitor accepts
-    "last_layout": 0x24,        # multi-view layout restored by "pbp on"
+    "last_layout": 0x24,        # multi-input layout restored by "pbp on"
     "panel_width": 5120,        # native width, for telling PBP sides apart
     "edge_switch": False,       # move the KVM when the pointer hits the edge
     "osd": True,                # on-screen pop-up for shortcut/edge actions
     "quick_settings": True,     # "Monitor" tile in GNOME Quick Settings
-    "connector": None,          # e.g. "DP-1"; read by the GNOME extension
     # USB devices that live behind the monitor's KVM-switched hub; if any is
     # present on this machine, the keyboard/mouse are here.  (U4025QW:
     # Realtek HID functions on the switched sub-hubs.)  The monitor does not
     # report KVM state over DDC, so we infer it from USB.
     "kvm_marker_usb": ["0bda:1100", "0bda:1101"],
-    # Dell manufacturer specific VCP codes (overridable for other models)
+    # VCP codes: the standard ones plus Dell's manufacturer-specific ones
+    # (overridable in the config file for other models)
     "vcp": {
         "input": 0x60,
-        "pxp_mode": 0xE9, "pbp_on": 0x24, "pxp_off": 0x00,
-        "pbp_right_input": 0xE8,
-        "swap_video": 0xE5, "swap_video_value": 0xF001,
+        "layout": 0xE9,
+        "second_input": 0xE8,
+        "swap": 0xE5, "swap_value": 0xF001,
         "usb": 0xE7, "usb_toggle_value": 0xFF00,
         "brightness": 0x10, "contrast": 0x12, "volume": 0x62,
     },
 }
 
+_SINGLE = next(lay.code for lay in LAYOUTS if lay.kind == "single")
 
-def load_config() -> dict:
-    cfg = json.loads(json.dumps(DEFAULTS))
+# Serialises config writes between this process's threads; an flock on the
+# file does the same between processes (the app and the shortcut commands).
+_config_lock = threading.Lock()
+
+
+def _read_user_config() -> dict:
+    """Only what the user (or a cache) changed: the file holds no defaults."""
     try:
         with open(CONFIG_FILE) as f:
-            user = json.load(f)
-        vcp = user.pop("vcp", {})
-        cfg.update(user)
-        cfg["vcp"].update({k: int(v, 0) if isinstance(v, str) else v
-                           for k, v in vcp.items()})
+            data = json.load(f)
     except (OSError, ValueError):
-        pass
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    vcp = data.get("vcp")
+    if isinstance(vcp, dict):
+        data["vcp"] = {k: int(v, 0) if isinstance(v, str) else v
+                       for k, v in vcp.items()}
+    return data
+
+
+def load_config() -> dict:
+    cfg = copy.deepcopy(DEFAULTS)
+    user = _read_user_config()
+    cfg["vcp"].update(user.pop("vcp", {}))
+    cfg.update(user)
     return cfg
 
 
-def save_config(cfg: dict) -> None:
+def update_config(changes: dict) -> dict:
+    """Apply `changes` to the config file and return the merged config.
+
+    The file is re-read under a lock first, so changes made meanwhile by
+    another thread or process are kept, and only values that differ from
+    the defaults are written."""
     os.makedirs(CONFIG_DIR, exist_ok=True)
-    out = dict(cfg)
-    out["vcp"] = {k: f"0x{v:02X}" for k, v in cfg["vcp"].items()}
-    tmp = CONFIG_FILE + ".tmp"
-    with open(tmp, "w") as f:
-        json.dump(out, f, indent=2)
-    os.replace(tmp, CONFIG_FILE)
+    with _config_lock, open(os.path.join(CONFIG_DIR, ".lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        cfg = load_config()
+        for key, value in changes.items():
+            if key == "vcp":
+                cfg["vcp"].update(value)
+            else:
+                cfg[key] = value
+        out = {k: v for k, v in cfg.items()
+               if k != "vcp" and v != DEFAULTS.get(k)}
+        vcp = {k: f"0x{v:02X}" for k, v in cfg["vcp"].items()
+               if v != DEFAULTS["vcp"].get(k)}
+        if vcp:
+            out["vcp"] = vcp
+        fd, tmp = tempfile.mkstemp(dir=CONFIG_DIR, prefix=".config-")
+        with os.fdopen(fd, "w") as f:
+            json.dump(out, f, indent=2)
+            f.write("\n")
+        os.replace(tmp, CONFIG_FILE)
+    return cfg
 
 
 @dataclass
 class Status:
-    input: int | None = None
-    pbp: bool | None = None
-    pxp_raw: int | None = None
-    right_input: int | None = None
-    usb_raw: int | None = None
+    input: int | None = None          # main (left) input
+    layout: int | None = None         # VCP E9 value
+    multi: bool | None = None         # two inputs on screen (side by side/inset)
+    second_input: int | None = None   # right side or inset
     usb_here: bool | None = None
-    levels: dict = None             # {"brightness": (cur, max), ...}
+    levels: dict = field(default_factory=dict)   # {"brightness": (cur, max)}
     error: str | None = None
 
 
@@ -181,6 +220,11 @@ class Controller:
     def __init__(self):
         self.cfg = load_config()
         self.monitor: ddc.Monitor | None = None
+        self._maximum: dict[str, int] = {}
+
+    def update(self, **changes) -> None:
+        """Change settings, keeping changes made by other processes."""
+        self.cfg = update_config(changes)
 
     # ---- discovery -------------------------------------------------------
     def connect(self) -> ddc.Monitor:
@@ -196,14 +240,10 @@ class Controller:
             mon.bus = cached
         else:
             ddc.probe_bus(mon)
-            if mon.bus != cached:
-                self.cfg["bus"] = mon.bus
-                self.cfg["monitor_serial"] = mon.serial
-                save_config(self.cfg)
-        connector = mon.connector.split("-", 1)[1]
-        if self.cfg.get("connector") != connector:
-            self.cfg["connector"] = connector
-            save_config(self.cfg)
+        found = {"bus": mon.bus, "monitor_serial": mon.serial,
+                 "connector": mon.connector.split("-", 1)[1]}
+        if any(self.cfg.get(k) != v for k, v in found.items()):
+            self.update(**found)
         self.monitor = mon
         return mon
 
@@ -228,8 +268,7 @@ class Controller:
             inputs = []
         if not inputs:
             inputs = [0x0F, 0x11, 0x19, 0x1B]
-        self.cfg["inputs"] = inputs
-        save_config(self.cfg)
+        self.update(inputs=inputs)
         return inputs
 
     def input_label(self, code: int) -> str:
@@ -261,9 +300,9 @@ class Controller:
                 why.append(_("no Thunderbolt/USB-C video link"))
         if len(cands) > 1:
             shown = {self.get_input()}
-            layout = self.get_pxp()
-            if layout != self.vcp["pxp_off"]:
-                shown.add(self.get_right_input())
+            layout = self.get_layout()
+            if layout != _SINGLE:
+                shown.add(self.get_second_input())
             narrowed = [c for c in cands if c in shown]
             if narrowed:
                 cands = narrowed
@@ -275,7 +314,7 @@ class Controller:
                 if width:
                     left_w, right_w = panel * lay.left, panel * (1 - lay.left)
                     side = self.get_input() if abs(width - left_w) < \
-                        abs(width - right_w) else self.get_right_input()
+                        abs(width - right_w) else self.get_second_input()
                     if side in cands:
                         cands = [side]
                         why.append(_("{width} px wide in {layout}").format(
@@ -284,6 +323,23 @@ class Controller:
             return cands[0], ", ".join(why)
         names = ", ".join(self.input_label(c) for c in cands) or _("none")
         return None, _("could be any of: {inputs}").format(inputs=names)
+
+    def autoconfigure(self) -> None:
+        """Fill in "this" and "other" computer on first use when they can be
+        worked out: this computer's input by detection, the other one as the
+        second input on screen."""
+        this, other = self.cfg.get("this_input"), self.cfg.get("other_input")
+        changes = {}
+        if this is None:
+            this, _why = self.detect_this_input()
+            if this is not None:
+                changes["this_input"] = this
+        if other is None and this is not None and self.is_multi():
+            shown = {self.get_input(), self.get_second_input()} - {this}
+            if len(shown) == 1:
+                changes["other_input"] = shown.pop()
+        if changes:
+            self.update(**changes)
 
     def _current_width(self) -> int | None:
         try:
@@ -297,23 +353,16 @@ class Controller:
         return ddc.getvcp(self.bus, self.vcp["input"]).low
 
     def set_input(self, code: int) -> None:
-        ddc.setvcp(self.bus, self.vcp["input"], code, verify=False)
+        ddc.setvcp(self.bus, self.vcp["input"], code)
 
-    # ---- PBP ---------------------------------------------------------------
-    def get_pxp(self) -> int:
-        return ddc.getvcp(self.bus, self.vcp["pxp_mode"]).low
+    def get_second_input(self) -> int:
+        return ddc.getvcp(self.bus, self.vcp["second_input"]).low
 
-    def is_pbp(self) -> bool:
-        return self.get_pxp() != self.vcp["pxp_off"]
+    def set_second_input(self, code: int) -> None:
+        ddc.setvcp(self.bus, self.vcp["second_input"], code)
 
-    def set_pbp(self, on: bool) -> None:
-        if on:
-            code = self.cfg.get("last_layout") or self.vcp["pbp_on"]
-            if code == self.vcp["pxp_off"]:
-                code = self.vcp["pbp_on"]
-            self.set_layout(code)
-        else:
-            self.set_layout(self.vcp["pxp_off"])
+    def swap(self) -> None:
+        ddc.setvcp(self.bus, self.vcp["swap"], self.vcp["swap_value"])
 
     # ---- layouts -----------------------------------------------------------
     def supported_layouts(self, refresh: bool = False) -> list[Layout]:
@@ -321,24 +370,33 @@ class Controller:
         if not codes or refresh:
             try:
                 caps = ddc.capabilities(self.bus)
-                codes = sorted(caps.get(self.vcp["pxp_mode"], {}).keys())
+                codes = sorted(caps.get(self.vcp["layout"], {}).keys())
             except ddc.DDCError:
                 codes = []
             if codes:
-                self.cfg["layouts"] = codes
-                save_config(self.cfg)
+                self.update(layouts=codes)
         if not codes:
-            codes = [self.vcp["pxp_off"], self.vcp["pbp_on"]]
+            codes = [_SINGLE, DEFAULTS["last_layout"]]
         return [lay for lay in LAYOUTS if lay.code in codes]
 
     def get_layout(self) -> int:
-        return self.get_pxp()
+        return ddc.getvcp(self.bus, self.vcp["layout"]).low
+
+    def is_multi(self) -> bool:
+        """Two inputs on screen (side by side or inset)."""
+        return self.get_layout() != _SINGLE
 
     def set_layout(self, code: int) -> None:
-        ddc.setvcp(self.bus, self.vcp["pxp_mode"], code)
-        if code != self.vcp["pxp_off"] and self.cfg.get("last_layout") != code:
-            self.cfg["last_layout"] = code
-            save_config(self.cfg)
+        ddc.setvcp(self.bus, self.vcp["layout"], code)
+        if code != _SINGLE and self.cfg.get("last_layout") != code:
+            self.update(last_layout=code)
+
+    def set_multi(self, on: bool) -> None:
+        """Back to the last multi-input layout, or a single input."""
+        code = self.cfg.get("last_layout") if on else _SINGLE
+        if on and code in (None, _SINGLE):
+            code = DEFAULTS["last_layout"]
+        self.set_layout(code)
 
     def next_layout(self) -> Layout:
         """Cycle through the multi-view layouts the monitor supports."""
@@ -350,19 +408,7 @@ class Controller:
         self.set_layout(nxt.code)
         return nxt
 
-    def get_right_input(self) -> int:
-        return ddc.getvcp(self.bus, self.vcp["pbp_right_input"]).low
-
-    def set_right_input(self, code: int) -> None:
-        ddc.setvcp(self.bus, self.vcp["pbp_right_input"], code)
-
-    def swap_video(self) -> None:
-        ddc.setvcp(self.bus, self.vcp["swap_video"], self.vcp["swap_video_value"])
-
     # ---- USB / KVM -----------------------------------------------------------
-    def get_usb(self) -> int:
-        return ddc.getvcp(self.bus, self.vcp["usb"]).value
-
     def toggle_usb(self) -> None:
         ddc.setvcp(self.bus, self.vcp["usb"], self.vcp["usb_toggle_value"])
 
@@ -403,19 +449,22 @@ class Controller:
     def get_level(self, name: str) -> tuple[int, int]:
         """(current, maximum) of "brightness", "contrast" or "volume"."""
         v = ddc.getvcp(self.bus, self.vcp[name])
-        return v.value, v.maximum or 100
+        self._maximum[name] = v.maximum or 100
+        return v.value, self._maximum[name]
 
     def set_level(self, name: str, value: int) -> int:
         """Set a level, clamped to the monitor's range; returns it."""
-        _cur, top = self.get_level(name)
+        top = self._maximum.get(name) or self.get_level(name)[1]
         value = max(0, min(top, int(value)))
         ddc.setvcp(self.bus, self.vcp[name], value)
         return value
 
     def adjust_level(self, name: str, spec: str) -> int:
-        """spec is "60", "+10" or "-10"."""
+        """spec is "60", "+10" or "-10"; raises ValueError otherwise."""
         spec = spec.strip()
-        if spec[:1] in "+-":
+        if not re.fullmatch(r"[+-]?\d+", spec):
+            raise ValueError(spec)
+        if spec[0] in "+-":
             cur, _top = self.get_level(name)
             return self.set_level(name, cur + int(spec))
         return self.set_level(name, int(spec))
@@ -426,13 +475,13 @@ class Controller:
         "right") of the monitor.  If, in the current side-by-side layout,
         the other computer's picture is on that side, hand it the keyboard
         and mouse.  Returns a message, or None when nothing was done."""
-        lay = LAYOUT_BY_CODE.get(self.get_pxp())
+        lay = LAYOUT_BY_CODE.get(self.get_layout())
         if not lay or lay.kind != "pbp":
             return None
         this = self.cfg.get("this_input")
         if this is None:
             this, _why = self.detect_this_input()
-        left, right = self.get_input(), self.get_right_input()
+        left, right = self.get_input(), self.get_second_input()
         if not ((this == right and edge == "left") or
                 (this == left and edge == "right")):
             return None
@@ -441,10 +490,10 @@ class Controller:
         return self.set_usb(False, wait=0)
 
     def switch(self) -> str:
-        """In PBP: move keyboard/mouse to the other computer.
-        In single view: flip the full screen between this and the other input
-        (the monitor's KVM moves USB along with the video)."""
-        if self.is_pbp():
+        """With two inputs on screen: move keyboard/mouse to the other
+        computer.  With one: flip the full screen between this and the other
+        computer's input (the monitor's KVM moves USB along with the video)."""
+        if self.is_multi():
             here = self.usb_here()
             if here is None:
                 self.toggle_usb()
@@ -467,21 +516,16 @@ class Controller:
             st.error = str(e)
             return st
         try:
-            st.pxp_raw = self.get_pxp()
-            st.pbp = st.pxp_raw != self.vcp["pxp_off"]
+            st.layout = self.get_layout()
+            st.multi = st.layout != _SINGLE
         except ddc.DDCError:
             pass
-        if st.pbp:
+        if st.multi:
             try:
-                st.right_input = self.get_right_input()
+                st.second_input = self.get_second_input()
             except ddc.DDCError:
                 pass
-        try:
-            st.usb_raw = self.get_usb()
-        except ddc.DDCError:
-            pass
         st.usb_here = self.usb_here()
-        st.levels = {}
         for name in (LEVELS if levels else ()):
             try:
                 st.levels[name] = self.get_level(name)

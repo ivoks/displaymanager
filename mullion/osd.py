@@ -3,7 +3,7 @@
 """On-screen feedback: GNOME's pop-up (as for volume keys) via our extension.
 
 GNOME Shell's own ShowOSD D-Bus method only accepts calls from GNOME
-components, so the DisplayManager extension exports an equivalent method on
+components, so the Mullion extension exports an equivalent method on
 the Shell's bus connection.  If the extension isn't running, callers fall
 back to a desktop notification.
 """
@@ -26,8 +26,8 @@ def show(icon: str, label: str, level: float | None = None) -> bool:
     Returns False if the extension isn't available."""
     try:
         bus = Gio.bus_get_sync(Gio.BusType.SESSION)
-        bus.call_sync("org.gnome.Shell", "/io/github/DisplayManager",
-                      "io.github.DisplayManager", "ShowOSD",
+        bus.call_sync("org.gnome.Shell", "/io/github/ivoks/Mullion",
+                      "io.github.ivoks.Mullion", "ShowOSD",
                       GLib.Variant("(ssd)", (icon, label,
                                              -1.0 if level is None
                                              else float(level))),
@@ -45,7 +45,7 @@ def notify(label: str) -> None:
                       "/org/freedesktop/Notifications",
                       "org.freedesktop.Notifications", "Notify",
                       GLib.Variant("(susssasa{sv}i)",
-                                   ("DisplayManager", 0, ICON_DISPLAY, label,
+                                   ("Mullion", 0, ICON_DISPLAY, label,
                                     "", [],
                                     {"transient": GLib.Variant("b", True)},
                                     2000)),

@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Ante Karamatic
+import os
+import sys
+
+# The project (or installed) root holds the "mullion" package next to bin/.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+
+if len(sys.argv) > 1:
+    from mullion.cli import main
+    sys.exit(main(sys.argv[1:]))
+else:
+    from mullion.gui import main
+    sys.exit(main())

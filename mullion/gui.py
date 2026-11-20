@@ -12,17 +12,16 @@ gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gio, GLib, Gtk  # noqa: E402
 
-from . import ddc, edge, shortcuts  # noqa: E402
-from .controller import (LAYOUTS, LEVELS, Controller, Layout,  # noqa: E402
-                         save_config)
+from . import ddc, extension, shortcuts  # noqa: E402
+from .controller import LAYOUTS, LEVELS, Controller, Layout  # noqa: E402
 from .i18n import _  # noqa: E402
 
-APP_ID = "io.github.DisplayManager"
+APP_ID = "io.github.ivoks.Mullion"
 
 
 class Window(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application):
-        super().__init__(application=app, title="DisplayManager",
+        super().__init__(application=app, title="Mullion",
                          default_width=520, default_height=760)
         self.ctl = Controller()
         self.inputs: list[int] = []
@@ -64,7 +63,7 @@ class Window(Adw.ApplicationWindow):
         bottom = Adw.ViewSwitcherBar(stack=stack)
         view.add_bottom_bar(bottom)
         bp = Adw.Breakpoint.new(Adw.BreakpointCondition.parse("max-width: 420sp"))
-        bp.add_setter(header, "title-widget", Adw.WindowTitle(title="DisplayManager"))
+        bp.add_setter(header, "title-widget", Adw.WindowTitle(title="Mullion"))
         bp.add_setter(bottom, "reveal", True)
         self.add_breakpoint(bp)
         self.toasts.set_child(view)
@@ -129,16 +128,16 @@ class Window(Adw.ApplicationWindow):
         r = Adw.ActionRow(title=_("Swap Inputs"))
         b = Gtk.Button(icon_name="object-flip-horizontal-symbolic",
                        valign=Gtk.Align.CENTER, tooltip_text=_("Swap"))
-        b.connect("clicked", lambda *a: self.run(self.ctl.swap_video,
+        b.connect("clicked", lambda *a: self.run(self.ctl.swap,
                                                  _("Swapped the inputs")))
         r.add_suffix(b)
         r.set_activatable_widget(b)
         g.add(r)
-        self.right_row = Adw.ComboRow(title=_("Second Input"),
-                                      subtitle=_("Right side, or the inset"),
-                                      model=self.input_model)
-        self.right_row.connect("notify::selected", self.on_right_input)
-        g.add(self.right_row)
+        self.second_row = Adw.ComboRow(title=_("Second Input"),
+                                       subtitle=_("Right side, or the inset"),
+                                       model=self.input_model)
+        self.second_row.connect("notify::selected", self.on_second_input)
+        g.add(self.second_row)
         page.add(g)
 
         # --- picture & sound ----------------------------------------------
@@ -358,9 +357,10 @@ class Window(Adw.ApplicationWindow):
         def work():
             if full or self.ctl.monitor is None:
                 self.ctl.connect()
+                self.ctl.autoconfigure()
             inputs = self.ctl.supported_inputs(refresh=False)
-            self.layout_codes = {lay.code for lay in self.ctl.supported_layouts()}
-            return inputs, self.ctl.status()
+            layouts = {lay.code for lay in self.ctl.supported_layouts()}
+            return inputs, layouts, self.ctl.status()
         self.bg(work, self._apply_state, self._connect_failed)
 
     def _connect_failed(self, exc: Exception) -> None:
@@ -369,7 +369,7 @@ class Window(Adw.ApplicationWindow):
         self.on_error(exc)
 
     def _apply_state(self, res) -> None:
-        inputs, st = res
+        inputs, self.layout_codes, st = res
         self.banner.set_revealed(False)
         mon = self.ctl.monitor
         self._updating = True
@@ -381,27 +381,30 @@ class Window(Adw.ApplicationWindow):
             cfg = self.ctl.cfg
             for row, key in ((self.this_row, "this_input"),
                              (self.other_row, "other_input")):
+                # A combo row always shows some entry, so say when the
+                # setting is really empty instead of implying the first one.
                 v = cfg.get(key)
                 row.set_selected(inputs.index(v) if v in inputs
                                  else Gtk.INVALID_LIST_POSITION)
+                row.set_subtitle("" if v in inputs else _("Not set"))
             if st.input in inputs:
                 self.full_row.set_selected(inputs.index(st.input))
             for code, btn in self.layout_btns.items():
                 btn.set_visible(code in self.layout_codes)
                 btn.get_parent().set_visible(code in self.layout_codes)
-                if code == st.pxp_raw:
+                if code == st.layout:
                     btn.set_active(True)
-            self.layout_box.set_sensitive(st.pxp_raw is not None)
-            self.right_row.set_sensitive(bool(st.pbp))
+            self.layout_box.set_sensitive(st.layout is not None)
+            self.second_row.set_sensitive(bool(st.multi))
             for name, scale in self.level_scales.items():
-                level = (st.levels or {}).get(name)
+                level = st.levels.get(name)
                 scale.get_ancestor(Adw.ActionRow).set_sensitive(level is not None)
                 if level and name not in self._level_pending:
                     cur, top = level
                     scale.set_range(0, top)
                     scale.set_value(cur)
-            if st.right_input in inputs:
-                self.right_row.set_selected(inputs.index(st.right_input))
+            if st.second_input in inputs:
+                self.second_row.set_selected(inputs.index(st.second_input))
             other = cfg.get("other_input")
             if other is not None:
                 lbl = cfg["input_labels"].get(f"0x{other:02x}", "")
@@ -415,12 +418,12 @@ class Window(Adw.ApplicationWindow):
         if st.input is not None:
             parts.append(_("Showing {input}").format(
                 input=self.ctl.input_label(st.input)))
-        lay = next((x for x in LAYOUTS if x.code == st.pxp_raw), None)
+        lay = next((x for x in LAYOUTS if x.code == st.layout), None)
         if lay and lay.kind != "single":
             parts.append(lay.title)
-            if st.right_input is not None:
+            if st.second_input is not None:
                 parts.append(_("second: {input}").format(
-                    input=self.ctl.input_label(st.right_input)))
+                    input=self.ctl.input_label(st.second_input)))
         self.mon_row.set_title(mon.model)
         self.mon_row.set_subtitle(GLib.markup_escape_text(" · ".join(parts)))
         self.usb_row.set_subtitle({
@@ -428,11 +431,11 @@ class Window(Adw.ApplicationWindow):
             False: _("Connected to the other computer"),
             None: _("Hand the monitor’s USB hub to the other computer"),
         }[st.usb_here])
-        self.switch_btn.set_label(_("Move Keyboard & Mouse") if st.pbp
+        self.switch_btn.set_label(_("Move Keyboard & Mouse") if st.multi
                                   else _("Switch Computer"))
         # With two inputs on screen the big button already moves the
         # keyboard and mouse, so the row only shows where they are.
-        self.usb_btn.set_visible(not st.pbp)
+        self.usb_btn.set_visible(not st.multi)
         if st.error:
             self.toast(st.error)
 
@@ -478,8 +481,7 @@ class Window(Adw.ApplicationWindow):
         if self._updating:
             return
         on = row.get_active()
-        self.ctl.cfg["edge_switch"] = on
-        save_config(self.ctl.cfg)       # the extension watches this file
+        self.ctl.update(edge_switch=on)     # the extension watches this file
 
         def done(res):
             if res is None and on:
@@ -488,7 +490,7 @@ class Window(Adw.ApplicationWindow):
             elif res is False:
                 self.toast(_("GNOME Shell couldn’t enable the edge-switch "
                              "extension"))
-        self.bg(lambda: edge.set_enabled(self._extension_wanted()), done)
+        self.bg(lambda: extension.set_enabled(self._extension_wanted()), done)
 
     def _extension_wanted(self) -> bool:
         cfg = self.ctl.cfg
@@ -496,19 +498,18 @@ class Window(Adw.ApplicationWindow):
                     or cfg.get("quick_settings", True))
 
     def on_osd_switch(self, row, _p):
-        self.ctl.cfg["osd"] = row.get_active()
-        save_config(self.ctl.cfg)
-        self.bg(lambda: edge.set_enabled(self._extension_wanted()))
+        self.ctl.update(osd=row.get_active())
+        self.bg(lambda: extension.set_enabled(self._extension_wanted()))
 
     def on_qs_switch(self, row, _p):
-        self.ctl.cfg["quick_settings"] = row.get_active()
-        save_config(self.ctl.cfg)       # the extension watches this file
-        self.bg(lambda: edge.set_enabled(self._extension_wanted()))
+        self.ctl.update(quick_settings=row.get_active())
+        self.bg(lambda: extension.set_enabled(self._extension_wanted()))
 
     def _sync_extension(self):
         """Keep the extension enabled while a feature needs it."""
-        if self._extension_wanted() and edge.info() and not edge.active():
-            edge.set_enabled(True)
+        if self._extension_wanted() and extension.info() and \
+                not extension.active():
+            extension.set_enabled(True)
 
     def on_layout(self, btn, lay: Layout):
         if self._updating or not btn.get_active():
@@ -522,8 +523,8 @@ class Window(Adw.ApplicationWindow):
         i = row.get_selected()
         if i == Gtk.INVALID_LIST_POSITION or i >= len(self.inputs):
             return
-        self.ctl.cfg[key] = self.inputs[i]
-        save_config(self.ctl.cfg)
+        self.ctl.update(**{key: self.inputs[i]})
+        row.set_subtitle("")
 
     def on_full_input(self, row, _p):
         if self._updating:
@@ -535,13 +536,13 @@ class Window(Adw.ApplicationWindow):
                      _("Switching to {input}").format(
                          input=self.ctl.input_label(code)))
 
-    def on_right_input(self, row, _p):
+    def on_second_input(self, row, _p):
         if self._updating:
             return
         i = row.get_selected()
         if i < len(self.inputs):
             code = self.inputs[i]
-            self.run(lambda: self.ctl.set_right_input(code),
+            self.run(lambda: self.ctl.set_second_input(code),
                      _("Second input: {input}").format(
                          input=self.ctl.input_label(code)))
 
@@ -556,10 +557,10 @@ class Window(Adw.ApplicationWindow):
                 self.toast(_("Detected input {code} is not in the list")
                            .format(code=f"0x{code:02X}"))
                 return
-            self.ctl.cfg["this_input"] = code
-            save_config(self.ctl.cfg)
+            self.ctl.update(this_input=code)
             self._updating = True
             self.this_row.set_selected(self.inputs.index(code))
+            self.this_row.set_subtitle("")
             self._updating = False
             self.toast(_("This computer: {input}").format(
                 input=self.ctl.input_label(code)))
@@ -571,17 +572,17 @@ class Window(Adw.ApplicationWindow):
             self.toast(_("Pick the other computer’s input first"))
             return
         name = entry.get_text().strip()
-        labels = self.ctl.cfg["input_labels"]
+        labels = dict(self.ctl.cfg["input_labels"])
         if name:
             labels[f"0x{other:02x}"] = name
         else:
             labels.pop(f"0x{other:02x}", None)
-        save_config(self.ctl.cfg)
+        self.ctl.update(input_labels=labels)
         self.inputs = []          # force relabel
         self.refresh()
 
     def _shortcut_row(self, key: str, title: str, default: str) -> Adw.SwitchRow:
-        cur = shortcuts.get(key)
+        cur = shortcuts.current(key)
         row = Adw.SwitchRow(title=GLib.markup_escape_text(title),
                             active=cur is not None)
         self._update_shortcut_subtitle(row, key, cur or default)
@@ -616,7 +617,7 @@ class Window(Adw.ApplicationWindow):
             return
         default = shortcuts.ACTIONS[key][2]
         try:
-            shortcuts.set(key, default if row.get_active() else None)
+            shortcuts.assign(key, default if row.get_active() else None)
         except Exception as e:  # noqa: BLE001
             self.toast(str(e))
             self._updating = True

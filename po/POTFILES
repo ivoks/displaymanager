@@ -1,10 +1,10 @@
 # Files with translatable strings (paths relative to the project root).
-ddm/cli.py
-ddm/controller.py
-ddm/ddc.py
-ddm/edge.py
-ddm/gui.py
-ddm/shortcuts.py
-extension/displaymanager@ivoks.github.io/quickmenu.js
-data/io.github.DisplayManager.desktop.in
-ddm/osd.py
+mullion/cli.py
+mullion/controller.py
+mullion/ddc.py
+mullion/extension.py
+mullion/gui.py
+mullion/shortcuts.py
+extension/mullion@ivoks.github.io/quickmenu.js
+data/io.github.ivoks.Mullion.desktop.in
+mullion/osd.py

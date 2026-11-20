@@ -17,14 +17,15 @@ from .i18n import N_, _
 SCHEMA = "org.gnome.settings-daemon.plugins.media-keys"
 CHILD = SCHEMA + ".custom-keybinding"
 BASE = "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/"
-PREFIX = "displaymanager-"
+PREFIX = "mullion-"
+KEYPAD_SUFFIX = "-keypad"
 
 # id -> (title msgid, CLI sub-command, default accelerator)
 ACTIONS = {
     "switch": (N_("Switch computer"), "switch", "<Super><Control>k"),
     "usb": (N_("Move keyboard & mouse"), "usb toggle", "<Super><Control>u"),
     "pbp": (N_("Toggle side-by-side"), "pbp toggle", "<Super><Control>p"),
-    "swap": (N_("Swap left/right"), "swap", "<Super><Control>s"),
+    "swap": (N_("Swap inputs"), "swap", "<Super><Control>s"),
     "layout": (N_("Next layout"), "layout next", "<Super><Control>l"),
 }
 
@@ -57,11 +58,11 @@ def _available() -> bool:
 
 
 def launcher() -> str:
-    exe = shutil.which("displaymanager")
+    exe = shutil.which("mullion")
     if exe:
         return exe
     here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return f"{sys.executable} {os.path.join(here, 'displaymanager')}"
+    return f"{sys.executable} {os.path.join(here, 'bin', 'mullion')}"
 
 
 _MOD_ALIASES = {"control": "ctrl", "ctl": "ctrl", "ctrl": "ctrl",
@@ -124,9 +125,6 @@ def conflicts(accel: str, action: str | None = None) -> list[str]:
     return found
 
 
-KEYPAD_SUFFIX = "-keypad"
-
-
 def keypad_twin(accel: str | None) -> str | None:
     """'<Super><Alt>2' -> '<Super><Alt>KP_2'.  Number-pad keys send their
     own keysyms, and a GNOME custom shortcut holds only one binding, so
@@ -141,8 +139,8 @@ def _child(path: str) -> Gio.Settings:
     return Gio.Settings.new_with_path(CHILD, path)
 
 
-def get(action: str) -> str | None:
-    """Return the accelerator if the shortcut is installed, else None."""
+def current(action: str) -> str | None:
+    """The shortcut's keys if it is installed, else None."""
     if not _available():
         return None
     path = BASE + PREFIX + action + "/"
@@ -151,7 +149,10 @@ def get(action: str) -> str | None:
     return _child(path).get_string("binding") or None
 
 
-def set(action: str, accel: str | None) -> None:
+def assign(action: str, accel: str | None) -> None:
+    """Install the shortcut with these keys (plus its number-pad twin for a
+    digit), or remove it when accel is None.  Raises ValueError if the keys
+    are already used elsewhere in GNOME."""
     if not _available():
         raise RuntimeError(_("GNOME keyboard shortcut settings are not available"))
     if accel:
@@ -167,10 +168,10 @@ def set(action: str, accel: str | None) -> None:
                (BASE + PREFIX + action + KEYPAD_SUFFIX + "/",
                 keypad_twin(accel),
                 _("{name} (number pad)").format(name=name))]
-    for path, binding, title in entries:
+    for path, binding, entry_name in entries:
         if binding:
             c = _child(path)
-            c.set_string("name", title)
+            c.set_string("name", entry_name)
             c.set_string("command", f"{launcher()} {cmd}")
             c.set_string("binding", binding)
             if path not in paths:

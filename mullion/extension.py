@@ -1,20 +1,19 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (C) 2026 Ante Karamatic
-"""Talk to GNOME Shell about the DisplayManager extension.
+"""Enable or disable the Mullion GNOME Shell extension.
 
-Wayland doesn't let applications see where the pointer is, so switching the
-keyboard and mouse at the screen edge is done by a small GNOME Shell
-extension (extension/displaymanager@ivoks.github.io).  The extension reads
-"edge_switch" and "connector" from our config file and calls
-`displaymanager cross <edge>`.  It also provides the on-screen pop-up
-(see osd.py).  This module only enables or disables it.
+The extension (extension/mullion@ivoks.github.io) provides what an
+application can't do on Wayland: switching the keyboard and mouse at the
+screen edge, GNOME's on-screen pop-up (see osd.py) and the Monitor tile in
+Quick Settings.  It reads its settings from our config file and runs the
+`mullion` command; this module only turns it on or off.
 """
 
 from __future__ import annotations
 
 from gi.repository import Gio, GLib
 
-UUID = "displaymanager@ivoks.github.io"
+UUID = "mullion@ivoks.github.io"
 _STATE_ACTIVE = 1
 
 

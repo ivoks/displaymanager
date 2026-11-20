@@ -3,7 +3,7 @@ import os
 import unittest
 from unittest import mock
 
-from ddm import ddc
+from mullion import ddc
 
 DATA = os.path.join(os.path.dirname(__file__), "data")
 

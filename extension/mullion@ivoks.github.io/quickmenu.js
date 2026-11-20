@@ -3,8 +3,8 @@
 //
 // "Monitor" tile in GNOME's Quick Settings: the tile toggles side by side,
 // its menu lists the layouts and offers moving the keyboard and mouse and
-// swapping the inputs.  All monitor access goes through the `displaymanager`
-// command; `displaymanager state --json` supplies the current state with
+// swapping the inputs.  All monitor access goes through the `mullion`
+// command; `mullion state` supplies the current state with
 // layout names already translated.
 
 import Gio from 'gi://Gio';
@@ -16,11 +16,11 @@ import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js';
 import {gettext as _} from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const APP_ID = 'io.github.DisplayManager';
+const APP_ID = 'io.github.ivoks.Mullion';
 
-export function displaymanagerPath() {
-    return GLib.find_program_in_path('displaymanager') ??
-        GLib.build_filenamev([GLib.get_home_dir(), '.local', 'bin', 'displaymanager']);
+export function mullionPath() {
+    return GLib.find_program_in_path('mullion') ??
+        GLib.build_filenamev([GLib.get_home_dir(), '.local', 'bin', 'mullion']);
 }
 
 function monitorIcon() {
@@ -55,7 +55,7 @@ function registerClasses() {
             this._usbItem = this.menu.addAction('', () => this._run(['usb', 'toggle']));
             this.menu.addAction(_('Swap Inputs'), () => this._run(['swap']));
             this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-            this.menu.addAction(_('Open DisplayManager'), () => this._openApp());
+            this.menu.addAction(_('Open Mullion'), () => this._openApp());
 
             this.connect('clicked', () => this._run(['pbp', 'toggle']));
             this._sync();
@@ -65,7 +65,7 @@ function registerClasses() {
             if (this._busy)
                 return;
             this._busy = true;
-            this._spawn(['state', '--json'], true, stdout => {
+            this._spawn(['state'], true, stdout => {
                 this._busy = false;
                 try {
                     this._state = JSON.parse(stdout);
@@ -107,18 +107,18 @@ function registerClasses() {
                 ? Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE
                 : Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE;
             try {
-                const proc = Gio.Subprocess.new([displaymanagerPath(), ...args], flags);
+                const proc = Gio.Subprocess.new([mullionPath(), ...args], flags);
                 proc.communicate_utf8_async(null, null, (p, res) => {
                     let stdout = '';
                     try {
                         [, stdout] = p.communicate_utf8_finish(res);
                     } catch (e) {
-                        logError(e, 'DisplayManager');
+                        logError(e, 'Mullion');
                     }
                     done(stdout ?? '');
                 });
             } catch (e) {
-                logError(e, 'DisplayManager: cannot run displaymanager');
+                logError(e, 'Mullion: cannot run mullion');
                 done(JSON.stringify({error: e.message}));
             }
         }

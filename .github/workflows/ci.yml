@@ -29,24 +29,24 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          path: displaymanager
+          path: mullion
 
       - name: Unit tests
-        working-directory: displaymanager
+        working-directory: mullion
         run: make check
 
       - name: Check the GNOME Shell extension loads
-        working-directory: displaymanager
+        working-directory: mullion
         run: sh tests/check-extension.sh
 
       - name: Build package
-        working-directory: displaymanager
+        working-directory: mullion
         run: dpkg-buildpackage -us -uc -b
 
       - name: Lintian
-        run: lintian --fail-on error,warning --info displaymanager_*_all.deb
+        run: lintian --fail-on error,warning --info mullion_*_all.deb
 
       - uses: actions/upload-artifact@v4
         with:
-          name: displaymanager-deb
-          path: displaymanager_*_all.deb
+          name: mullion-deb
+          path: mullion_*_all.deb

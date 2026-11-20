@@ -42,10 +42,6 @@ class Monitor:
     buses: list[int] = field(default_factory=list)  # candidate /dev/i2c-N
     bus: int | None = None  # bus confirmed to answer DDC/CI
 
-    @property
-    def label(self) -> str:
-        return f"{self.model} ({self.connector.split('-', 1)[-1]})"
-
 
 @dataclass
 class VCPValue:
@@ -155,14 +151,13 @@ def getvcp(bus: int, code: int) -> VCPValue:
     return VCPValue(code, nums)
 
 
-def setvcp(bus: int, code: int, value: int, verify: bool = False) -> None:
-    """Write a feature.  Dell's vendor codes frequently answer with a DDC
-    NULL response even though the command took effect, so by default we
-    don't verify and we tolerate that particular error."""
-    args = ["--bus", str(bus)]
-    if not verify:
-        args.append("--noverify")
-    args += ["setvcp", f"{code:02x}", f"0x{value:x}"]
+def setvcp(bus: int, code: int, value: int) -> None:
+    """Write a feature.  Dell's vendor codes often answer with a DDC NULL
+    response even though the command took effect, and several of them are
+    actions whose read-back never changes, so writes are not verified and
+    that particular error is tolerated."""
+    args = ["--bus", str(bus), "--noverify",
+            "setvcp", f"{code:02x}", f"0x{value:x}"]
     try:
         _run(args)
     except DDCError as e:

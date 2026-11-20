@@ -1,4 +1,4 @@
-Source: displaymanager
+Source: mullion
 Section: utils
 Priority: optional
 Maintainer: Ante Karamatic <ivoks@ubuntu.com>
@@ -8,7 +8,7 @@ Build-Depends: debhelper-compat (= 13), dh-python, gettext, python3:any,
 Standards-Version: 4.7.2
 Rules-Requires-Root: no
 
-Package: displaymanager
+Package: mullion
 Architecture: all
 Depends: ${misc:Depends}, ${python3:Depends},
          ddcutil (>= 2.0),
@@ -25,10 +25,13 @@ Description: switch inputs, screen layouts and KVM on DDC/CI monitors
     splits, or picture in picture; swap sides and pick the second input
   * hand the monitor's built-in KVM (USB hub with keyboard and mouse)
     to the other computer
-  * optional system-wide GNOME keyboard shortcuts for all of the above
-  * optionally hand over the keyboard and mouse when the pointer is pushed
-    against the screen edge next to the other computer (GNOME Shell
-    extension)
+  * brightness, contrast and speaker volume
+  * optional system-wide GNOME keyboard shortcuts
+ .
+ A GNOME Shell extension adds a Monitor tile to Quick Settings, shows
+ GNOME's on-screen pop-up for shortcut actions and can hand over the
+ keyboard and mouse when the pointer is pushed against the screen edge
+ next to the other computer.
  .
  Developed and tested with a U4025QW monitor; manufacturer-specific VCP
  codes are configurable for other models.

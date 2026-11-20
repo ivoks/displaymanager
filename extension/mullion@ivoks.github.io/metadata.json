@@ -1,0 +1,12 @@
+{
+  "uuid": "mullion@ivoks.github.io",
+  "name": "Mullion",
+  "description": "GNOME Shell integration for Mullion: a Monitor tile in Quick Settings, the on-screen pop-up, and handing the monitor's keyboard and mouse (KVM) to the other computer when the pointer is pushed against the screen edge. Configure it in the Mullion app.",
+  "shell-version": [
+    "48",
+    "49",
+    "50"
+  ],
+  "url": "https://github.com/ivoks/mullion",
+  "gettext-domain": "mullion"
+}

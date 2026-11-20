@@ -7,4 +7,4 @@
 # (dh_auto_build) and installs everything under DESTDIR (dh_auto_install).
 
 override_dh_python3:
-	dh_python3 /usr/share/displaymanager
+	dh_python3 /usr/share/mullion

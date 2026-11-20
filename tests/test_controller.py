@@ -4,8 +4,8 @@ import os
 import unittest
 from unittest import mock
 
-from ddm import controller as C
-from ddm import ddc
+from mullion import controller as C
+from mullion import ddc
 
 
 class FakeMonitor(C.Controller):
@@ -24,10 +24,9 @@ class FakeMonitor(C.Controller):
         self.usb_moves = []
 
     def get_input(self): return self.left
-    def get_right_input(self): return self.right
-    def get_pxp(self): return self.layout
+    def get_second_input(self): return self.right
+    def get_layout(self): return self.layout
     def usb_here(self): return self._usb
-    def get_usb(self): return 0xBC00
     def _current_width(self): return self.width
 
     def set_usb(self, here, wait=6.0):
@@ -153,20 +152,101 @@ class Levels(unittest.TestCase):
 
 
 class Config(unittest.TestCase):
-    def test_round_trip_keeps_hex_codes_and_defaults(self):
-        cfg = C.load_config()
-        cfg["this_input"] = 0x0F
-        cfg["vcp"]["usb"] = 0xE7
-        C.save_config(cfg)
+    def setUp(self):
+        try:
+            os.remove(C.CONFIG_FILE)
+        except FileNotFoundError:
+            pass
+
+    def stored(self):
         with open(C.CONFIG_FILE) as f:
-            self.assertEqual(json.load(f)["vcp"]["usb"], "0xE7")
-        again = C.load_config()
-        self.assertEqual(again["this_input"], 0x0F)
-        self.assertEqual(again["vcp"]["usb"], 0xE7)
-        self.assertEqual(again["vcp"]["brightness"], 0x10)
+            return json.load(f)
+
+    def test_only_changes_are_stored(self):
+        C.update_config({"this_input": 0x0F, "osd": True,
+                         "vcp": {"usb": 0xE7, "layout": 0xEA}})
+        # osd and the usb code equal their defaults, so they aren't stored:
+        # a future change of a default reaches existing users.
+        self.assertEqual(self.stored(), {"this_input": 0x0F,
+                                         "vcp": {"layout": "0xEA"}})
+        cfg = C.load_config()
+        self.assertEqual(cfg["vcp"]["layout"], 0xEA)
+        self.assertEqual(cfg["vcp"]["brightness"], 0x10)
+        self.assertTrue(cfg["osd"])
+
+    def test_changes_from_another_process_are_kept(self):
+        ctl = C.Controller()                     # loaded before the change
+        C.update_config({"edge_switch": True})   # e.g. the app, elsewhere
+        ctl.update(last_layout=0x2A)             # e.g. a shortcut command
+        cfg = C.load_config()
+        self.assertTrue(cfg["edge_switch"])
+        self.assertEqual(cfg["last_layout"], 0x2A)
+
+    def test_concurrent_updates(self):
+        import threading
+        threads = [threading.Thread(target=C.update_config,
+                                    args=({f"test_{i}": i},)) for i in range(20)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        cfg = C.load_config()
+        self.assertEqual({k: cfg[k] for k in cfg if k.startswith("test_")},
+                         {f"test_{i}": i for i in range(20)})
+
+    def test_damaged_file_falls_back_to_defaults(self):
+        os.makedirs(C.CONFIG_DIR, exist_ok=True)
+        with open(C.CONFIG_FILE, "w") as f:
+            f.write("{not json")
+        self.assertEqual(C.load_config(), C.DEFAULTS)
 
     def test_config_lives_in_test_directory(self):
         self.assertTrue(C.CONFIG_FILE.startswith(os.environ["XDG_CONFIG_HOME"]))
+
+
+class Autoconfigure(unittest.TestCase):
+    def setUp(self):
+        try:
+            os.remove(C.CONFIG_FILE)
+        except FileNotFoundError:
+            pass
+
+    def fresh(self, **kw):
+        ctl = FakeMonitor(**kw)
+        ctl.cfg["this_input"] = ctl.cfg["other_input"] = None
+        return ctl
+
+    def test_side_by_side_fills_both(self):
+        ctl = self.fresh()                        # Mac left, Ubuntu right
+        with mock.patch.object(C, "_usb_c_video_possible", return_value=False):
+            ctl.autoconfigure()
+        self.assertEqual((ctl.cfg["this_input"], ctl.cfg["other_input"]),
+                         (0x0F, 0x19))
+
+    def test_ambiguous_leaves_them_unset(self):
+        ctl = self.fresh()
+        with mock.patch.object(C, "_usb_c_video_possible", return_value=True):
+            ctl.autoconfigure()
+        self.assertIsNone(ctl.cfg["this_input"])
+        self.assertIsNone(ctl.cfg["other_input"])
+
+    def test_keeps_existing_choice(self):
+        ctl = FakeMonitor(this=0x11)
+        ctl.cfg["other_input"] = 0x0F
+        with mock.patch.object(ctl, "update") as update:
+            ctl.autoconfigure()
+        update.assert_not_called()
+
+
+class Multi(unittest.TestCase):
+    def test_on_restores_last_layout(self):
+        ctl = FakeMonitor(layout=0x00)
+        ctl.cfg["last_layout"] = 0x2A
+        with mock.patch.object(ctl, "set_layout") as set_layout:
+            ctl.set_multi(True)
+            ctl.set_multi(False)
+        self.assertEqual([c.args[0] for c in set_layout.call_args_list],
+                         [0x2A, 0x00])
 
 
 if __name__ == "__main__":
