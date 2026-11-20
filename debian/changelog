@@ -1,7 +1,7 @@
 displaymanager (0.1.0) resolute; urgency=medium
 
   * Initial release.
-    - GTK 4 / libadwaita UI and CLI for Dell monitors over DDC/CI.
+    - GTK 4 / libadwaita UI and CLI for controlling monitors over DDC/CI.
     - Input selection, side swap, second input.
     - Screen layouts: single, 50/50, 75/25, 80/20, 25/75, 20/80 and two
       picture-in-picture sizes.

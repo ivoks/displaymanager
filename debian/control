@@ -14,16 +14,16 @@ Depends: ${misc:Depends}, ${python3:Depends},
          gir1.2-gtk-4.0,
          gir1.2-adw-1 (>= 1.6)
 Recommends: gnome-settings-daemon
-Description: switch inputs, Picture-by-Picture and KVM on Dell monitors
- A GTK 4 / libadwaita application and command line tool that controls Dell
- monitors over DDC/CI, providing on GNOME what Dell Display and Peripheral
- Manager provides on macOS and Windows:
+Description: switch inputs, screen layouts and KVM on DDC/CI monitors
+ A GTK 4 / libadwaita application and command line tool that controls
+ monitors over DDC/CI:
  .
   * select the active video input
-  * turn Picture-by-Picture on or off, swap sides, choose the right input
+  * choose the screen layout: single input, side by side in several
+    splits, or picture in picture; swap sides and pick the second input
   * hand the monitor's built-in KVM (USB hub with keyboard and mouse)
     to the other computer
   * optional system-wide GNOME keyboard shortcuts for all of the above
  .
- Developed and tested on the Dell U4025QW; vendor VCP codes are
- configurable for other models.
+ Developed and tested with a U4025QW monitor; manufacturer-specific VCP
+ codes are configurable for other models.
