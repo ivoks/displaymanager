@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mullion 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/ivoks/mullion/issues\n"
-"POT-Creation-Date: 2026-11-20 11:20+0100\n"
+"POT-Creation-Date: 2026-11-20 12:16+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -94,111 +94,117 @@ msgid ""
 "other computer is on that side (used by the GNOME extension)"
 msgstr ""
 
-#: mullion/cli.py:106
+#: mullion/cli.py:107
+msgid ""
+"only print the other computer's name if it is on that side (exit status 1 if "
+"not)"
+msgstr ""
+
+#: mullion/cli.py:109
 msgid "work out which input this computer is plugged into"
 msgstr ""
 
-#: mullion/cli.py:120
+#: mullion/cli.py:123
 msgid "Monitor:"
 msgstr ""
 
-#: mullion/cli.py:122
+#: mullion/cli.py:125
 msgid "Input:"
 msgstr ""
 
-#: mullion/cli.py:126
+#: mullion/cli.py:129
 msgid "Layout:"
 msgstr ""
 
-#: mullion/cli.py:127 mullion/cli.py:129 mullion/cli.py:140
+#: mullion/cli.py:130 mullion/cli.py:132 mullion/cli.py:143
 msgid "unknown"
 msgstr ""
 
-#: mullion/cli.py:131
+#: mullion/cli.py:134
 msgid "Second input:"
 msgstr ""
 
-#: mullion/cli.py:138
+#: mullion/cli.py:141
 msgid "Keyboard & mouse:"
 msgstr ""
 
-#: mullion/cli.py:139
+#: mullion/cli.py:142
 msgid "this computer"
 msgstr ""
 
-#: mullion/cli.py:139
+#: mullion/cli.py:142
 msgid "other computer"
 msgstr ""
 
-#: mullion/cli.py:141
+#: mullion/cli.py:144
 msgid "This computer:"
 msgstr ""
 
-#: mullion/cli.py:142
+#: mullion/cli.py:145
 msgid "Other computer:"
 msgstr ""
 
-#: mullion/cli.py:145
+#: mullion/cli.py:148
 msgid "not set"
 msgstr ""
 
-#: mullion/cli.py:151
+#: mullion/cli.py:154
 #, python-brace-format
 msgid "Could not tell: {reason}"
 msgstr ""
 
-#: mullion/cli.py:153
+#: mullion/cli.py:156
 #, python-brace-format
 msgid "This computer: {input} ({code}) [{reason}]"
 msgstr ""
 
-#: mullion/cli.py:169
+#: mullion/cli.py:172
 #, python-brace-format
 msgid "error: “{value}” is not a number, +N or -N"
 msgstr ""
 
-#: mullion/cli.py:190 mullion/controller.py:500 mullion/gui.py:451
+#: mullion/cli.py:199 mullion/controller.py:518 mullion/gui.py:476
 msgid "Toggled keyboard and mouse"
 msgstr ""
 
-#: mullion/cli.py:197 mullion/gui.py:132
+#: mullion/cli.py:206 mullion/gui.py:157
 msgid "Swapped the inputs"
 msgstr ""
 
-#: mullion/cli.py:202
+#: mullion/cli.py:211
 msgid "Side by side on"
 msgstr ""
 
-#: mullion/cli.py:202
+#: mullion/cli.py:211
 msgid "Side by side off"
 msgstr ""
 
-#: mullion/cli.py:218
+#: mullion/cli.py:227
 #, python-brace-format
 msgid "error: unknown layout “{name}”; try “layout list”"
 msgstr ""
 
-#: mullion/cli.py:222 mullion/gui.py:518
+#: mullion/cli.py:231 mullion/gui.py:561
 #, python-brace-format
 msgid "Layout: {layout}"
 msgstr ""
 
-#: mullion/cli.py:225 mullion/controller.py:509
+#: mullion/cli.py:234 mullion/controller.py:527
 #, python-brace-format
 msgid "Switched to {input}"
 msgstr ""
 
-#: mullion/cli.py:229 mullion/gui.py:546
+#: mullion/cli.py:238 mullion/gui.py:589
 #, python-brace-format
 msgid "Second input: {input}"
 msgstr ""
 
-#: mullion/cli.py:239
+#: mullion/cli.py:248
 #, python-brace-format
 msgid "error: {message}"
 msgstr ""
 
-#: mullion/cli.py:241
+#: mullion/cli.py:250
 #, python-brace-format
 msgid "Error: {message}"
 msgstr ""
@@ -247,59 +253,59 @@ msgstr ""
 msgid "Volume"
 msgstr ""
 
-#: mullion/controller.py:235
+#: mullion/controller.py:237
 msgid "No monitor found on any display connector"
 msgstr ""
 
-#: mullion/controller.py:277
+#: mullion/controller.py:279 mullion/controller.py:286
 #, python-brace-format
 msgid "Input {code}"
 msgstr ""
 
-#: mullion/controller.py:294
+#: mullion/controller.py:302
 #, python-brace-format
 msgid "connected via {connector}"
 msgstr ""
 
-#: mullion/controller.py:300
+#: mullion/controller.py:308
 msgid "no Thunderbolt/USB-C video link"
 msgstr ""
 
-#: mullion/controller.py:309
+#: mullion/controller.py:317
 msgid "on screen"
 msgstr ""
 
-#: mullion/controller.py:320
+#: mullion/controller.py:328
 #, python-brace-format
 msgid "{width} px wide in {layout}"
 msgstr ""
 
-#: mullion/controller.py:324
+#: mullion/controller.py:332
 msgid "none"
 msgstr ""
 
-#: mullion/controller.py:325
+#: mullion/controller.py:333
 #, python-brace-format
 msgid "could be any of: {inputs}"
 msgstr ""
 
-#: mullion/controller.py:436
+#: mullion/controller.py:444
 msgid "Keyboard and mouse are already here"
 msgstr ""
 
-#: mullion/controller.py:437
+#: mullion/controller.py:445
 msgid "Keyboard and mouse are already on the other computer"
 msgstr ""
 
-#: mullion/controller.py:445
+#: mullion/controller.py:453
 msgid "Keyboard and mouse moved here"
 msgstr ""
 
-#: mullion/controller.py:446
+#: mullion/controller.py:454
 msgid "Keyboard and mouse moved to the other computer"
 msgstr ""
 
-#: mullion/controller.py:504
+#: mullion/controller.py:522
 msgid "Set “This Computer” and “Other Computer” in the app first"
 msgstr ""
 
@@ -320,309 +326,343 @@ msgstr ""
 msgid "no I2C bus for this connector"
 msgstr ""
 
-#: mullion/gui.py:38
+#: mullion/gui.py:22
+msgid "Show a button"
+msgstr ""
+
+#: mullion/gui.py:22
+msgid "Switch when pushed"
+msgstr ""
+
+#: mullion/gui.py:24
+msgid "Light"
+msgstr ""
+
+#: mullion/gui.py:24
+msgid "Medium"
+msgstr ""
+
+#: mullion/gui.py:24
+msgid "Firm"
+msgstr ""
+
+#: mullion/gui.py:43
 msgid "Refresh monitor state"
 msgstr ""
 
-#: mullion/gui.py:52
+#: mullion/gui.py:57
 msgid "Display"
 msgstr ""
 
-#: mullion/gui.py:54
+#: mullion/gui.py:59
 msgid "Shortcuts"
 msgstr ""
 
-#: mullion/gui.py:56
+#: mullion/gui.py:61
 msgid "Advanced"
 msgstr ""
 
-#: mullion/gui.py:74
+#: mullion/gui.py:79
 msgid "Looking for monitor…"
 msgstr ""
 
-#: mullion/gui.py:81
+#: mullion/gui.py:86
 msgid "Switch"
 msgstr ""
 
-#: mullion/gui.py:82 mullion/gui.py:435
+#: mullion/gui.py:87 mullion/gui.py:460
 msgid "Switch Computer"
 msgstr ""
 
-#: mullion/gui.py:90
+#: mullion/gui.py:95
 msgid "Keyboard & Mouse"
 msgstr ""
 
-#: mullion/gui.py:91 mullion/gui.py:432
+#: mullion/gui.py:96 mullion/gui.py:457
 msgid "Hand the monitor’s USB hub to the other computer"
 msgstr ""
 
-#: mullion/gui.py:92
+#: mullion/gui.py:97
 msgid "Move"
 msgstr ""
 
-#: mullion/gui.py:97
+#: mullion/gui.py:102
 msgid "Switch at Screen Edge"
 msgstr ""
 
-#: mullion/gui.py:98
+#: mullion/gui.py:103
 msgid ""
-"Side by side: push the pointer against the edge next to the other computer "
-"to hand it the keyboard and mouse"
+"Side by side: hand the keyboard and mouse to the other computer from the "
+"edge next to its picture"
 msgstr ""
 
-#: mullion/gui.py:107
+#: mullion/gui.py:109
+msgid "When the Pointer Reaches the Edge"
+msgstr ""
+
+#: mullion/gui.py:117
+msgid "Push Strength"
+msgstr ""
+
+#: mullion/gui.py:118
+msgid ""
+"How firmly to push into the edge; pushes with a mouse button held, near the "
+"corners or right after the keyboard and mouse arrive are ignored"
+msgstr ""
+
+#: mullion/gui.py:132
 msgid "Layout"
 msgstr ""
 
-#: mullion/gui.py:108
+#: mullion/gui.py:133
 msgid "How the screen is shared between the two inputs"
 msgstr ""
 
-#: mullion/gui.py:128
+#: mullion/gui.py:153
 msgid "Swap Inputs"
 msgstr ""
 
-#: mullion/gui.py:130
+#: mullion/gui.py:155
 msgid "Swap"
 msgstr ""
 
-#: mullion/gui.py:136
+#: mullion/gui.py:161
 msgid "Second Input"
 msgstr ""
 
-#: mullion/gui.py:137
+#: mullion/gui.py:162
 msgid "Right side, or the inset"
 msgstr ""
 
-#: mullion/gui.py:145
+#: mullion/gui.py:170
 msgid "Picture & Sound"
 msgstr ""
 
-#: mullion/gui.py:169
+#: mullion/gui.py:194
 msgid "Computers"
 msgstr ""
 
-#: mullion/gui.py:170
+#: mullion/gui.py:195
 msgid "Which monitor input each computer is plugged into"
 msgstr ""
 
-#: mullion/gui.py:172
+#: mullion/gui.py:197
 msgid "This Computer"
 msgstr ""
 
-#: mullion/gui.py:174
+#: mullion/gui.py:199
 msgid "Other Computer"
 msgstr ""
 
-#: mullion/gui.py:176
+#: mullion/gui.py:201
 msgid "Show Full Screen"
 msgstr ""
 
-#: mullion/gui.py:177
+#: mullion/gui.py:202
 msgid "Select the active input directly"
 msgstr ""
 
-#: mullion/gui.py:183
+#: mullion/gui.py:208
 msgid "Detect"
 msgstr ""
 
-#: mullion/gui.py:184
+#: mullion/gui.py:209
 msgid "Work out which input this computer is plugged into"
 msgstr ""
 
-#: mullion/gui.py:188
+#: mullion/gui.py:213
 msgid "Other Computer Name"
 msgstr ""
 
-#: mullion/gui.py:197
+#: mullion/gui.py:222
 msgid "General"
 msgstr ""
 
-#: mullion/gui.py:198
+#: mullion/gui.py:223
 msgid ""
 "System-wide GNOME shortcuts. Change the keys in Settings → Keyboard → Custom "
 "Shortcuts."
 msgstr ""
 
-#: mullion/gui.py:202
+#: mullion/gui.py:227
 msgid "Show On-Screen Pop-Up"
 msgstr ""
 
-#: mullion/gui.py:203
+#: mullion/gui.py:228
 msgid ""
 "When a shortcut or the screen edge changes something; otherwise a "
 "notification is shown"
 msgstr ""
 
-#: mullion/gui.py:209
+#: mullion/gui.py:234
 msgid "Show in Quick Settings"
 msgstr ""
 
-#: mullion/gui.py:210
+#: mullion/gui.py:235
 msgid ""
 "A Monitor tile in GNOME’s Quick Settings to pick a layout, move the keyboard "
 "and mouse or swap inputs"
 msgstr ""
 
-#: mullion/gui.py:221
+#: mullion/gui.py:246
 msgid "Layouts"
 msgstr ""
 
-#: mullion/gui.py:222
+#: mullion/gui.py:247
 msgid "Jump straight to a screen layout"
 msgstr ""
 
-#: mullion/gui.py:224
+#: mullion/gui.py:249
 msgid "Enable All"
 msgstr ""
 
-#: mullion/gui.py:237
+#: mullion/gui.py:262
 msgid "Raw VCP Access"
 msgstr ""
 
-#: mullion/gui.py:238
+#: mullion/gui.py:263
 msgid ""
 "Read or write any DDC/CI feature, e.g. to probe manufacturer-specific codes. "
 "Writing the wrong value can change monitor settings."
 msgstr ""
 
-#: mullion/gui.py:241
+#: mullion/gui.py:266
 msgid "Feature code (hex, e.g. E7)"
 msgstr ""
 
-#: mullion/gui.py:242
+#: mullion/gui.py:267
 msgid "Value (hex, for Set)"
 msgstr ""
 
-#: mullion/gui.py:243
+#: mullion/gui.py:268
 msgid "Result"
 msgstr ""
 
-#: mullion/gui.py:246
+#: mullion/gui.py:271
 msgid "Get"
 msgstr ""
 
-#: mullion/gui.py:246
+#: mullion/gui.py:271
 msgid "Set"
 msgstr ""
 
-#: mullion/gui.py:264
+#: mullion/gui.py:289
 msgid "Full screen"
 msgstr ""
 
-#: mullion/gui.py:265
+#: mullion/gui.py:290
 msgid "Picture in picture"
 msgstr ""
 
-#: mullion/gui.py:341
+#: mullion/gui.py:366
 msgid "Done"
 msgstr ""
 
-#: mullion/gui.py:349
+#: mullion/gui.py:374
 msgid ""
 "No access to the monitor’s I2C bus. Run “sudo usermod -aG i2c $USER”, then "
 "log out and back in."
 msgstr ""
 
-#: mullion/gui.py:367
+#: mullion/gui.py:392
 msgid "Monitor not reachable"
 msgstr ""
 
-#: mullion/gui.py:389
+#: mullion/gui.py:414
 msgid "Not set"
 msgstr ""
 
-#: mullion/gui.py:416
+#: mullion/gui.py:441
 #, python-brace-format
 msgid "Serial {serial}"
 msgstr ""
 
-#: mullion/gui.py:419
+#: mullion/gui.py:444
 #, python-brace-format
 msgid "Showing {input}"
 msgstr ""
 
-#: mullion/gui.py:425
+#: mullion/gui.py:450
 #, python-brace-format
 msgid "second: {input}"
 msgstr ""
 
-#: mullion/gui.py:430
+#: mullion/gui.py:455
 msgid "Connected to this computer"
 msgstr ""
 
-#: mullion/gui.py:431
+#: mullion/gui.py:456
 msgid "Connected to the other computer"
 msgstr ""
 
-#: mullion/gui.py:434
+#: mullion/gui.py:459
 msgid "Move Keyboard & Mouse"
 msgstr ""
 
-#: mullion/gui.py:488
+#: mullion/gui.py:514
 msgid "Log out and back in once to finish setting up edge switching"
 msgstr ""
 
-#: mullion/gui.py:491
+#: mullion/gui.py:517
 msgid "GNOME Shell couldn’t enable the edge-switch extension"
 msgstr ""
 
-#: mullion/gui.py:536
+#: mullion/gui.py:579
 #, python-brace-format
 msgid "Switching to {input}"
 msgstr ""
 
-#: mullion/gui.py:553
+#: mullion/gui.py:596
 #, python-brace-format
 msgid "Couldn’t tell which input this is ({reason}); choose it from the list"
 msgstr ""
 
-#: mullion/gui.py:557
+#: mullion/gui.py:600
 #, python-brace-format
 msgid "Detected input {code} is not in the list"
 msgstr ""
 
-#: mullion/gui.py:565
+#: mullion/gui.py:608
 #, python-brace-format
 msgid "This computer: {input}"
 msgstr ""
 
-#: mullion/gui.py:572
+#: mullion/gui.py:615
 msgid "Pick the other computer’s input first"
 msgstr ""
 
-#: mullion/gui.py:596
+#: mullion/gui.py:639
 msgid "(also on the number pad)"
-msgstr ""
-
-#: mullion/gui.py:599
-#, python-brace-format
-msgid "already used by {users}"
-msgstr ""
-
-#: mullion/gui.py:611
-#, python-brace-format
-msgid "Couldn’t enable: {shortcuts}"
-msgstr ""
-
-#: mullion/gui.py:613
-msgid "Layout shortcuts enabled"
-msgstr ""
-
-#: mullion/gui.py:632
-msgid "Enter a feature code in hex"
 msgstr ""
 
 #: mullion/gui.py:642
 #, python-brace-format
-msgid "VCP {code}: value {value}, raw {raw}"
+msgid "already used by {users}"
+msgstr ""
+
+#: mullion/gui.py:654
+#, python-brace-format
+msgid "Couldn’t enable: {shortcuts}"
 msgstr ""
 
 #: mullion/gui.py:656
+msgid "Layout shortcuts enabled"
+msgstr ""
+
+#: mullion/gui.py:675
+msgid "Enter a feature code in hex"
+msgstr ""
+
+#: mullion/gui.py:685
+#, python-brace-format
+msgid "VCP {code}: value {value}, raw {raw}"
+msgstr ""
+
+#: mullion/gui.py:699
 msgid "Enter a value in hex"
 msgstr ""
 
-#: mullion/gui.py:659
+#: mullion/gui.py:702
 #, python-brace-format
 msgid "Wrote {value} to VCP {code}"
 msgstr ""
@@ -669,6 +709,10 @@ msgstr ""
 #: mullion/shortcuts.py:170
 #, python-brace-format
 msgid "{name} (number pad)"
+msgstr ""
+
+#: extension/mullion@ivoks.github.io/edgepopup.js:34
+msgid "Switch to {name}"
 msgstr ""
 
 #: extension/mullion@ivoks.github.io/quickmenu.js:43

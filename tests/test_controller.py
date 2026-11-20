@@ -104,6 +104,14 @@ class Cross(unittest.TestCase):
         ctl = FakeMonitor(usb_here=False)
         self.assertIsNone(ctl.cross("left"))
 
+    def test_edge_target_names_the_other_computer(self):
+        ctl = FakeMonitor()                          # Mac left, Ubuntu right
+        ctl.cfg["input_labels"] = {"0x19": "Mac"}
+        self.assertEqual(ctl.edge_target("left"), 0x19)
+        self.assertIsNone(ctl.edge_target("right"))
+        self.assertEqual(ctl.computer_name(0x19), "Mac")
+        self.assertEqual(ctl.computer_name(0x11), "HDMI-1")
+
 
 class Switch(unittest.TestCase):
     def test_side_by_side_moves_keyboard(self):

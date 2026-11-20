@@ -31,6 +31,14 @@ class Release(unittest.TestCase):
         self.assertEqual(os.path.basename(EXT), extension.UUID)
         self.assertEqual(meta["gettext-domain"], i18n.DOMAIN)
 
+    def test_edge_pressure_default_matches_extension(self):
+        # The config file only stores non-defaults, so when the app's
+        # default is chosen the extension falls back to its own constant.
+        from mullion.controller import DEFAULTS
+        with open(os.path.join(EXT, "extension.js")) as f:
+            js = re.search(r"^const DEFAULT_PRESSURE = (\d+);", f.read(), re.M)
+        self.assertEqual(int(js.group(1)), DEFAULTS["edge_pressure"])
+
     def test_app_id_is_consistent(self):
         # Read it from the source: importing mullion.gui needs GTK, which
         # the build environment doesn't have.

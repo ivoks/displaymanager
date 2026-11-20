@@ -73,6 +73,7 @@ install: all
 		$(DESTDIR)$(DATADIR)/icons/hicolor/symbolic/apps/$(APP_ID)-symbolic.svg
 	install -d $(DESTDIR)$(EXTDIR)
 	install -m 644 extension/$(EXT_UUID)/metadata.json extension/$(EXT_UUID)/*.js \
+		extension/$(EXT_UUID)/stylesheet.css \
 		$(DESTDIR)$(EXTDIR)/
 	install -D -m 644 data/mullion.1 $(DESTDIR)$(MANDIR)/man1/mullion.1
 	for l in $(LINGUAS); do \

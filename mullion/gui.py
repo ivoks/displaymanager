@@ -18,6 +18,11 @@ from .i18n import _  # noqa: E402
 
 APP_ID = "io.github.ivoks.Mullion"
 
+# What happens when the pointer reaches the edge next to the other computer.
+EDGE_MODES = [("button", _("Show a button")), ("push", _("Switch when pushed"))]
+# Screen-edge push strengths: px pushed into the edge within a second.
+PRESSURES = [(150, _("Light")), (300, _("Medium")), (500, _("Firm"))]
+
 
 class Window(Adw.ApplicationWindow):
     def __init__(self, app: Adw.Application):
@@ -95,12 +100,32 @@ class Window(Adw.ApplicationWindow):
         g.add(self.usb_row)
         self.edge_row = Adw.SwitchRow(
             title=_("Switch at Screen Edge"),
-            subtitle=_("Side by side: push the pointer against the edge next "
-                       "to the other computer to hand it the keyboard and "
-                       "mouse"),
+            subtitle=_("Side by side: hand the keyboard and mouse to the "
+                       "other computer from the edge next to its picture"),
             active=bool(self.ctl.cfg.get("edge_switch")))
         self.edge_row.connect("notify::active", self.on_edge_switch)
         g.add(self.edge_row)
+        self.edge_mode_row = Adw.ComboRow(
+            title=_("When the Pointer Reaches the Edge"),
+            model=Gtk.StringList.new([title for _m, title in EDGE_MODES]))
+        modes = [m for m, _title in EDGE_MODES]
+        mode = self.ctl.cfg.get("edge_mode")
+        self.edge_mode_row.set_selected(modes.index(mode) if mode in modes else 0)
+        self.edge_mode_row.connect("notify::selected", self.on_edge_mode)
+        g.add(self.edge_mode_row)
+        self.pressure_row = Adw.ComboRow(
+            title=_("Push Strength"),
+            subtitle=_("How firmly to push into the edge; pushes with a mouse "
+                       "button held, near the corners or right after the "
+                       "keyboard and mouse arrive are ignored"),
+            model=Gtk.StringList.new([title for _p, title in PRESSURES]))
+        values = [p for p, _title in PRESSURES]
+        current = self.ctl.cfg.get("edge_pressure")
+        self.pressure_row.set_selected(values.index(current)
+                                       if current in values else 1)
+        self.pressure_row.connect("notify::selected", self.on_pressure)
+        g.add(self.pressure_row)
+        self._sync_edge_rows()
         page.add(g)
 
         # --- layout ---------------------------------------------------------
@@ -482,6 +507,7 @@ class Window(Adw.ApplicationWindow):
             return
         on = row.get_active()
         self.ctl.update(edge_switch=on)     # the extension watches this file
+        self._sync_edge_rows()
 
         def done(res):
             if res is None and on:
@@ -491,6 +517,23 @@ class Window(Adw.ApplicationWindow):
                 self.toast(_("GNOME Shell couldn’t enable the edge-switch "
                              "extension"))
         self.bg(lambda: extension.set_enabled(self._extension_wanted()), done)
+
+    def _sync_edge_rows(self):
+        on = self.edge_row.get_active()
+        self.edge_mode_row.set_sensitive(on)
+        push = EDGE_MODES[self.edge_mode_row.get_selected()][0] == "push"
+        self.pressure_row.set_sensitive(on and push)
+
+    def on_edge_mode(self, row, _p):
+        i = row.get_selected()
+        if i < len(EDGE_MODES):
+            self.ctl.update(edge_mode=EDGE_MODES[i][0])
+        self._sync_edge_rows()
+
+    def on_pressure(self, row, _p):
+        i = row.get_selected()
+        if i < len(PRESSURES):
+            self.ctl.update(edge_pressure=PRESSURES[i][0])
 
     def _extension_wanted(self) -> bool:
         cfg = self.ctl.cfg

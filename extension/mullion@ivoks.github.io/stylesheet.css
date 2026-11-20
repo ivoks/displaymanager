@@ -1,0 +1,13 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+.mullion-edge-popup {
+    background-color: rgba(36, 36, 36, 0.92);
+    border-radius: 18px;
+    padding: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.mullion-edge-button {
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-weight: bold;
+}

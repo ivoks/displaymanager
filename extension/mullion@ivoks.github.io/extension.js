@@ -21,6 +21,7 @@
 //   ~/.config/mullion/config.json
 //   {"edge_switch": true, "quick_settings": true, "connector": "DP-1"}
 
+import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
@@ -30,11 +31,23 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as Layout from 'resource:///org/gnome/shell/ui/layout.js';
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
 
+import {EdgePopup} from './edgepopup.js';
 import {createIndicator, mullionPath} from './quickmenu.js';
 
-const PRESSURE_THRESHOLD = 100;     // px pushed into the edge…
-const PRESSURE_TIMEOUT = 1000;      // …within this many ms
+// How far (px) the pointer must be pushed into the edge within
+// PRESSURE_TIMEOUT for a switch; "edge_pressure" in the config overrides it.
+// GNOME's hot corner uses 100, which proved too easy to trigger by accident.
+const DEFAULT_PRESSURE = 300;
+// In "button" mode reaching the edge is enough to offer the pop-up.
+const BUTTON_PRESSURE = 30;
+const PRESSURE_TIMEOUT = 1000;      // ms
 const COOLDOWN_MS = 2000;           // ignore further pushes while switching
+// After the keyboard and mouse arrive, overshooting while coming across
+// shouldn't send them straight back.
+const ARRIVAL_GRACE_MS = 3000;
+// Keep the edges' ends free: the top panel with the Activities hot corner,
+// and the bottom corner (dock, window tiling).
+const CORNER_MARGIN = 48;           // px
 
 const DBUS_PATH = '/io/github/ivoks/Mullion';
 const DBUS_INTERFACE = `
@@ -54,6 +67,9 @@ export default class MullionExtension extends Extension {
         this._barriers = [];
         this._pressure = [];
         this._lastSwitch = 0;
+        this._lastArrival = 0;
+        this._checking = false;
+        this._popup = new EdgePopup(edge => this._runCross(edge));
         this._configFile = Gio.File.new_for_path(GLib.build_filenamev([
             GLib.get_user_config_dir(), 'mullion', 'config.json']));
 
@@ -74,6 +90,16 @@ export default class MullionExtension extends Extension {
         this._monitorsChangedId = Main.layoutManager.connect(
             'monitors-changed', () => this._rebuild());
 
+        // The monitor's keyboard and mouse appear as new input devices when
+        // the KVM hands them to this computer.
+        this._seat = global.stage.context.get_backend().get_default_seat();
+        this._deviceAddedId = this._seat.connect('device-added', (_seat, device) => {
+            const type = device.get_device_type();
+            if (type === Clutter.InputDeviceType.POINTER_DEVICE ||
+                type === Clutter.InputDeviceType.KEYBOARD_DEVICE)
+                this._lastArrival = GLib.get_monotonic_time() / 1000;
+        });
+
         this._dbus = Gio.DBusExportedObject.wrapJSObject(DBUS_INTERFACE, this);
         this._dbus.export(Gio.DBus.session, DBUS_PATH);
 
@@ -88,6 +114,8 @@ export default class MullionExtension extends Extension {
         }
         this._clear();
         this._removeQuickSettings();
+        this._popup?.hide();
+        this._popup = null;
         if (this._dirMonitor) {
             this._dirMonitor.disconnect(this._dirMonitorId);
             this._dirMonitor.cancel();
@@ -96,6 +124,11 @@ export default class MullionExtension extends Extension {
         if (this._monitorsChangedId) {
             Main.layoutManager.disconnect(this._monitorsChangedId);
             this._monitorsChangedId = 0;
+        }
+        if (this._deviceAddedId) {
+            this._seat.disconnect(this._deviceAddedId);
+            this._deviceAddedId = 0;
+            this._seat = null;
         }
         this._configFile = null;
     }
@@ -171,6 +204,18 @@ export default class MullionExtension extends Extension {
         if (index < 0 || !mon)
             return;
 
+        this._mode = cfg.edge_mode === 'push' ? 'push' : 'button';
+        const pressure = this._mode === 'button' ? BUTTON_PRESSURE
+            : Number(cfg.edge_pressure) > 0 ? Number(cfg.edge_pressure)
+                : DEFAULT_PRESSURE;
+        this._monitor = mon;
+        const panel = index === Main.layoutManager.primaryIndex
+            ? Main.layoutManager.panelBox.height : 0;
+        const y1 = mon.y + panel + CORNER_MARGIN;
+        const y2 = mon.y + mon.height - CORNER_MARGIN;
+        if (y2 <= y1)
+            return;
+
         // Only outer edges: a barrier between two of this computer's own
         // monitors would get in the way of moving the pointer across.
         const edges = [
@@ -182,30 +227,79 @@ export default class MullionExtension extends Extension {
                 continue;
             const barrier = new Meta.Barrier({
                 backend: global.backend,
-                x1: x, x2: x, y1: mon.y, y2: mon.y + mon.height,
+                x1: x, x2: x, y1, y2,
                 directions: allowed,
             });
-            const pressure = new Layout.PressureBarrier(
-                PRESSURE_THRESHOLD, PRESSURE_TIMEOUT, Shell.ActionMode.NORMAL);
-            pressure.addBarrier(barrier);
-            pressure.connect('trigger', () => this._cross(edge));
+            const push = new Layout.PressureBarrier(
+                pressure, PRESSURE_TIMEOUT, Shell.ActionMode.NORMAL);
+            push.addBarrier(barrier);
+            push.connect('trigger', () => this._onEdge(edge));
             this._barriers.push(barrier);
-            this._pressure.push(pressure);
+            this._pressure.push(push);
         }
     }
 
-    _cross(edge) {
+    // The pointer reached `edge`.
+    _onEdge(edge) {
         const now = GLib.get_monotonic_time() / 1000;
+        const [, y, mods] = global.get_pointer();
+        const buttons = Clutter.ModifierType.BUTTON1_MASK |
+            Clutter.ModifierType.BUTTON2_MASK | Clutter.ModifierType.BUTTON3_MASK;
+        if (mods & buttons) {
+            // Dragging a window to the edge to tile it, selecting text…
+            console.log(`Mullion: ${edge} edge reached with a button held, ignored`);
+            return;
+        }
+        if (now - this._lastArrival < ARRIVAL_GRACE_MS) {
+            console.log(`Mullion: ${edge} edge reached right after the keyboard and mouse arrived, ignored`);
+            return;
+        }
         if (now - this._lastSwitch < COOLDOWN_MS)
             return;
-        this._lastSwitch = now;
 
+        if (this._mode === 'push') {
+            this._runCross(edge);
+            return;
+        }
+        // "button": offer the pop-up if this edge leads to the other computer.
+        if (this._popup.visible || this._checking)
+            return;
+        this._checking = true;
+        this._spawn(['cross', edge, '--check'], (ok, out) => {
+            this._checking = false;
+            if (!ok || !out || !this._popup || !this._monitor) {
+                console.log(`Mullion: ${edge} edge doesn't lead to the other computer`);
+                return;
+            }
+            console.log(`Mullion: ${edge} edge reached, offering to switch to ${out}`);
+            this._popup.show(edge, out, this._monitor, y);
+        });
+    }
+
+    _runCross(edge) {
+        this._lastSwitch = GLib.get_monotonic_time() / 1000;
+        console.log(`Mullion: running "mullion cross ${edge}"`);
+        this._spawn(['cross', edge], (_ok, out) =>
+            console.log(`Mullion: ${out || 'nothing to do on this edge'}`));
+    }
+
+    // Run mullion with args; done(succeeded, trimmed output).
+    _spawn(args, done) {
         try {
-            const proc = Gio.Subprocess.new([mullionPath(), 'cross', edge],
-                Gio.SubprocessFlags.STDOUT_SILENCE | Gio.SubprocessFlags.STDERR_SILENCE);
-            proc.wait_async(null, null);
+            const proc = Gio.Subprocess.new([mullionPath(), ...args],
+                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_SILENCE);
+            proc.communicate_utf8_async(null, null, (p, res) => {
+                let out = '';
+                try {
+                    [, out] = p.communicate_utf8_finish(res);
+                } catch (e) {
+                    logError(e, 'Mullion');
+                }
+                done(p.get_successful(), (out ?? '').trim());
+            });
         } catch (e) {
             logError(e, 'Mullion: cannot run mullion');
+            done(false, '');
         }
     }
 }

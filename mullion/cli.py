@@ -103,6 +103,9 @@ def main(argv: list[str]) -> int:
                                        "if the other computer is on that "
                                        "side (used by the GNOME extension)"))
     s.add_argument("edge", choices=["left", "right"])
+    s.add_argument("--check", action="store_true",
+                   help=_("only print the other computer's name if it is on "
+                          "that side (exit status 1 if not)"))
     sub.add_parser("detect", help=_("work out which input this computer "
                                     "is plugged into"))
     a = p.parse_args(argv)
@@ -172,6 +175,12 @@ def main(argv: list[str]) -> int:
             msg = f"{title}: {value}"
             _cur, top = ctl.get_level(a.cmd)
             icon, level = osd.ICON_LEVELS[a.cmd], value / top
+        elif a.cmd == "cross" and a.check:
+            other = ctl.edge_target(a.edge)
+            if other is None:
+                return 1
+            print(ctl.computer_name(other))
+            return 0
         elif a.cmd == "cross":
             msg = ctl.cross(a.edge)
             if msg is None:

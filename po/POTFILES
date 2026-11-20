@@ -5,6 +5,7 @@ mullion/ddc.py
 mullion/extension.py
 mullion/gui.py
 mullion/shortcuts.py
+extension/mullion@ivoks.github.io/edgepopup.js
 extension/mullion@ivoks.github.io/quickmenu.js
 data/io.github.ivoks.Mullion.desktop.in
 mullion/osd.py

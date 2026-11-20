@@ -126,6 +126,8 @@ DEFAULTS = {
     "last_layout": 0x24,        # multi-input layout restored by "pbp on"
     "panel_width": 5120,        # native width, for telling PBP sides apart
     "edge_switch": False,       # move the KVM when the pointer hits the edge
+    "edge_mode": "button",      # at the edge: "button" (pop-up) or "push"
+    "edge_pressure": 300,       # px pushed into the edge within a second
     "osd": True,                # on-screen pop-up for shortcut/edge actions
     "quick_settings": True,     # "Monitor" tile in GNOME Quick Settings
     # USB devices that live behind the monitor's KVM-switched hub; if any is
@@ -276,6 +278,12 @@ class Controller:
         base = INPUT_NAMES.get(code) or \
             _("Input {code}").format(code=f"0x{code:02X}")
         return f"{custom} ({base})" if custom else base
+
+    def computer_name(self, code: int) -> str:
+        """Short name for the computer on an input: its custom name, or the
+        input's name."""
+        return self.cfg["input_labels"].get(f"0x{code:02x}") or \
+            INPUT_NAMES.get(code) or _("Input {code}").format(code=f"0x{code:02X}")
 
     def detect_this_input(self) -> tuple[int | None, str]:
         """Work out which monitor input this computer is plugged into.
@@ -470,11 +478,10 @@ class Controller:
         return self.set_level(name, int(spec))
 
     # ---- the one-button action --------------------------------------------
-    def cross(self, edge: str) -> str | None:
-        """The pointer was pushed against this computer's `edge` ("left" or
-        "right") of the monitor.  If, in the current side-by-side layout,
-        the other computer's picture is on that side, hand it the keyboard
-        and mouse.  Returns a message, or None when nothing was done."""
+    def edge_target(self, edge: str) -> int | None:
+        """The input of the other computer if, in the current side-by-side
+        layout, its picture is next to this computer's `edge` ("left" or
+        "right") and the keyboard and mouse are here; else None."""
         lay = LAYOUT_BY_CODE.get(self.get_layout())
         if not lay or lay.kind != "pbp":
             return None
@@ -482,10 +489,21 @@ class Controller:
         if this is None:
             this, _why = self.detect_this_input()
         left, right = self.get_input(), self.get_second_input()
-        if not ((this == right and edge == "left") or
-                (this == left and edge == "right")):
+        if this == right and edge == "left":
+            other = left
+        elif this == left and edge == "right":
+            other = right
+        else:
             return None
         if self.usb_here() is False:
+            return None
+        return other
+
+    def cross(self, edge: str) -> str | None:
+        """The pointer reached this computer's `edge` of the monitor: hand
+        the keyboard and mouse to the other computer if it is on that side.
+        Returns a message, or None when nothing was done."""
+        if self.edge_target(edge) is None:
             return None
         return self.set_usb(False, wait=0)
 

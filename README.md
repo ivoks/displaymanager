@@ -150,18 +150,37 @@ without it a regular notification is shown. Turn it off on the Shortcuts tab.
 
 ## Switching at the screen edge
 
-With two computers side by side, Mullion can hand the keyboard and
-mouse to the other computer when you push the pointer against the screen
-edge next to its picture, like Dell Display and Peripheral Manager's
-mouse crossing. Turn on **Switch at Screen Edge** on the Display tab.
+With two computers side by side, Mullion can hand the keyboard and mouse to
+the other computer from the screen edge next to its picture, like Dell
+Display and Peripheral Manager's mouse crossing. Turn on **Switch at Screen
+Edge** on the Display tab and choose what happens when the pointer reaches
+that edge:
 
-Wayland doesn't let applications see the pointer, so this is done by a
-small GNOME Shell extension (`extension/mullion@ivoks.github.io`,
-installed with the package). It places pressure barriers, like GNOME's hot
-corner, on the outer left and right edges of the monitor and runs
-`mullion cross left|right`, which checks the current layout and which
-side this computer is on before moving anything. Edges shared with another
-monitor of this computer are left alone.
+- **Show a button** (default): a small pop-up appears at the edge with
+  *Switch to …* (your name for the other computer); nothing changes unless
+  you click it. It disappears again when you move away.
+- **Switch when pushed**: push the pointer into the edge to switch.
+  **Push Strength** sets how far it must be pushed within a second: Light
+  (150 px), Medium (300 px, default) or Firm (500 px).
+
+Wayland doesn't let applications see the pointer, so this is done by the
+GNOME Shell extension (`extension/mullion@ivoks.github.io`, installed with
+the package). It places pressure barriers, like GNOME's hot corner, on the
+outer left and right edges of the monitor and asks
+`mullion cross left|right [--check]`, which checks the current layout and
+which side this computer is on, so the pop-up only appears, and switching
+only happens, on the edge that leads to the other computer. Edges shared
+with another monitor of this computer are left alone.
+
+To avoid switching by accident, the edge is ignored while a mouse button is
+held (dragging a window to the edge to tile it, selecting text), near the
+corners (the top panel and Activities corner, the bottom 48 px) and for
+3 seconds after the keyboard and mouse arrive. Every time the edge is
+reached is logged:
+
+```sh
+journalctl --user -b | grep 'Mullion:'
+```
 
 After installing for the first time, log out and back in once so GNOME
 Shell finds the extension. The way back is handled by the other computer:

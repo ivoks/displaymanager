@@ -49,6 +49,22 @@ class State(unittest.TestCase):
         self.assertEqual(json.loads(out), {"error": "no monitor"})
 
 
+class CrossCheck(unittest.TestCase):
+    """`cross <edge> --check` tells the extension whether to offer the
+    pop-up, without switching anything."""
+
+    def test_other_computer_on_that_side(self):
+        ctl = FakeMonitor()
+        ctl.cfg["input_labels"] = {"0x19": "Mac"}
+        rc, out = run(["cross", "left", "--check"], ctl)
+        self.assertEqual((rc, out.strip()), (0, "Mac"))
+        self.assertEqual(ctl.usb_moves, [])
+
+    def test_nothing_on_that_side(self):
+        rc, out = run(["cross", "right", "--check"], FakeMonitor())
+        self.assertEqual((rc, out), (1, ""))
+
+
 class Arguments(unittest.TestCase):
     def test_bad_input_code_is_an_error_not_a_traceback(self):
         err = io.StringIO()
