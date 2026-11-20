@@ -1,0 +1,96 @@
+Unparsed capabilities string: (prot(monitor)type(LCD)model(U4025QW)cmds(01 02 03 07 0C E3 F3)vcp(02 04 05 08 10 12 14(01 04 05 06 08 09 0B 0C) 16 18 1A 52 60(19 0F 11 ) 62 66(00F2) 67 68 87 AC AE B2 B6 C6 C8 C9 CA CC(02 0A 03 04 08 09 0D 06 ) D6(01 04 05) DC(00 03 05 ) DF E0 E1 E2(00 02 04 0C 0D 0F 10 11 13 0B 1A 1B 3D 14 27 23 24 3A ) E4(00 01) E5 E7(02 03) E8 E9(00 01 02 21 22 24 27 28 29 2A ) EA(FE FC ) F0(09 0A A1 31 32 34 36 ) EE EF(00 01 0F) F1 F2 FD)mswhql(1)asset_eep(40)mccs_ver(2.1))
+Errors parsing capabilities string:
+   Invalid VCP value in list for feature x66: 00F2
+Model: U4025QW
+MCCS version: 2.1
+Commands:
+   Op Code: 01 (VCP Request)
+   Op Code: 02 (VCP Response)
+   Op Code: 03 (VCP Set)
+   Op Code: 07 (Timing Request)
+   Op Code: 0C (Save Settings)
+   Op Code: E3 (Capabilities Reply)
+   Op Code: F3 (Capabilities Request)
+VCP Features:
+   Feature: 02 (New control value)
+   Feature: 04 (Restore factory defaults)
+   Feature: 05 (Restore factory brightness/contrast defaults)
+   Feature: 08 (Restore color defaults)
+   Feature: 10 (Brightness)
+   Feature: 12 (Contrast)
+   Feature: 14 (Select color preset)
+      Values:
+         01: sRGB
+         04: 5000 K
+         05: 6500 K
+         06: 7500 K
+         08: 9300 K
+         09: 10000 K
+         0b: User 1
+         0c: User 2
+   Feature: 16 (Video gain: Red)
+   Feature: 18 (Video gain: Green)
+   Feature: 1A (Video gain: Blue)
+   Feature: 52 (Active control)
+   Feature: 60 (Input Source)
+      Values:
+         19: Unrecognized value
+         0f: DisplayPort-1
+         11: HDMI-1
+   Feature: 62 (Audio speaker volume)
+   Feature: 66 (Ambient light sensor)
+      Values:
+   Feature: 67 (Unrecognized feature)
+   Feature: 68 (Unrecognized feature)
+   Feature: 87 (Sharpness)
+   Feature: AC (Horizontal frequency)
+   Feature: AE (Vertical frequency)
+   Feature: B2 (Flat panel sub-pixel layout)
+   Feature: B6 (Display technology type)
+   Feature: C6 (Application enable key)
+   Feature: C8 (Display controller type)
+   Feature: C9 (Display firmware level)
+   Feature: CA (OSD)
+   Feature: CC (OSD Language)
+      Values:
+         02: English
+         0a: Spanish
+         03: French
+         04: German
+         08: Portuguese (Portugal)
+         09: Russian
+         0d: Chinese (simplified / Kantai)
+         06: Japanese
+   Feature: D6 (Power mode)
+      Values:
+         01: DPM: On,  DPMS: Off
+         04: DPM: Off, DPMS: Off
+         05: Write only value to turn off display
+   Feature: DC (Display Mode)
+      Values:
+         00: Standard/Default mode
+         03: Movie
+         05: Games
+   Feature: DF (VCP Version)
+   Feature: E0 (Manufacturer specific feature)
+   Feature: E1 (Manufacturer specific feature)
+   Feature: E2 (Manufacturer specific feature)
+      Values: 00 02 04 0C 0D 0F 10 11 13 0B 1A 1B 3D 14 27 23 24 3A (interpretation unavailable)
+   Feature: E4 (Manufacturer specific feature)
+      Values: 00 01 (interpretation unavailable)
+   Feature: E5 (Manufacturer specific feature)
+   Feature: E7 (Manufacturer specific feature)
+      Values: 02 03 (interpretation unavailable)
+   Feature: E8 (Manufacturer specific feature)
+   Feature: E9 (Manufacturer specific feature)
+      Values: 00 01 02 21 22 24 27 28 29 2A (interpretation unavailable)
+   Feature: EA (Manufacturer specific feature)
+      Values: FE FC (interpretation unavailable)
+   Feature: F0 (Manufacturer specific feature)
+      Values: 09 0A A1 31 32 34 36 (interpretation unavailable)
+   Feature: EE (Manufacturer specific feature)
+   Feature: EF (Manufacturer specific feature)
+      Values: 00 01 0F (interpretation unavailable)
+   Feature: F1 (Manufacturer specific feature)
+   Feature: F2 (Manufacturer specific feature)
+   Feature: FD (Manufacturer specific feature)

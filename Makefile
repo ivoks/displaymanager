@@ -3,6 +3,7 @@
 #   make              compile translations and the desktop file into build/
 #   make pot          regenerate po/displaymanager.pot from the sources
 #   make update-po    merge the template into every po/<lang>.po
+#   make check        run the unit tests and validate translations
 #   make install      install under $(DESTDIR)$(PREFIX)
 #   make clean
 
@@ -46,6 +47,12 @@ pot:
 update-po: pot
 	for l in $(LINGUAS); do msgmerge --update --backup=none po/$$l.po po/$(DOMAIN).pot; done
 
+check: all
+	python3 -m unittest discover -s tests -t . -v
+	for l in $(LINGUAS); do msgfmt --check -o /dev/null po/$$l.po; done
+	if command -v desktop-file-validate >/dev/null; then \
+		desktop-file-validate $(DESKTOP); fi
+
 install: all
 	install -d $(DESTDIR)$(APPDIR)/ddm $(DESTDIR)$(PREFIX)/bin
 	install -m 644 ddm/*.py $(DESTDIR)$(APPDIR)/ddm/
@@ -68,4 +75,4 @@ clean:
 	rm -rf build
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +
 
-.PHONY: all pot update-po install clean
+.PHONY: all pot update-po check install clean

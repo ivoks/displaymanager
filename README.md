@@ -1,5 +1,6 @@
 # DisplayManager for GNOME
 
+[![CI](https://github.com/ivoks/displaymanager/actions/workflows/ci.yml/badge.svg)](https://github.com/ivoks/displaymanager/actions/workflows/ci.yml)
 
 A small GTK4/libadwaita app (plus CLI) that does what Dell Display and
 Peripheral Manager does on macOS for a Dell U4025QW: switch inputs, toggle
@@ -151,6 +152,21 @@ template and merges it into every `po/*.po`. `msgfmt --check` (run by
 `make`) verifies that placeholders match.
 
 Available: Croatian (`hr`).
+
+## Development
+
+```sh
+make check        # unit tests, translation and desktop-file checks
+```
+
+The tests need no monitor: DDC/CI output is mocked (with real output
+captured from a U4025QW in `tests/data/`) and settings go to a temporary
+directory. `dpkg-buildpackage` runs them too.
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push and pull
+request in an Ubuntu 26.04 container: tests, a load check of the GNOME
+Shell extension, the package build and lintian. The built `.deb` is kept
+as a downloadable artifact of each run.
 
 ## License
 

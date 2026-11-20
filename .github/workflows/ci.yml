@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# On every push and pull request: run the unit tests, build the Debian
+# package (which runs the tests again via dh_auto_test), lint it, and keep
+# the .deb as a downloadable artifact.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Test and build .deb (Ubuntu 26.04)
+    runs-on: ubuntu-latest
+    container: ubuntu:26.04
+    steps:
+      - name: Install build dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential ca-certificates debhelper devscripts dh-python \
+            dpkg-dev gettext git lintian make python3 python3-gi \
+            desktop-file-utils gjs
+
+      - uses: actions/checkout@v4
+        with:
+          path: displaymanager
+
+      - name: Unit tests
+        working-directory: displaymanager
+        run: make check
+
+      - name: Check the GNOME Shell extension parses
+        working-directory: displaymanager
+        run: |
+          ext=extension/displaymanager@ivoks.github.io
+          python3 -c "import json,sys; json.load(open('$ext/metadata.json'))"
+          # Replace Shell-only imports with stubs so gjs can load the module.
+          sed -e "s|^import Meta from 'gi://Meta';|const Meta = {};|" \
+              -e "s|^import Shell from 'gi://Shell';|const Shell = {};|" \
+              -e "s|^import \* as Main from .*|const Main = {};|" \
+              -e "s|^import \* as Layout from .*|const Layout = {};|" \
+              -e "s|^import {Extension} from .*|class Extension {}|" \
+              -e "s|^export default class|class|" \
+              $ext/extension.js > /tmp/extension-check.js
+          echo "new EdgeSwitchExtension(); Gio.DBusNodeInfo.new_for_xml(DBUS_INTERFACE);" >> /tmp/extension-check.js
+          gjs -m /tmp/extension-check.js
+
+      - name: Build package
+        working-directory: displaymanager
+        run: dpkg-buildpackage -us -uc -b
+
+      - name: Lintian
+        run: lintian --fail-on error,warning --info displaymanager_*_all.deb
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: displaymanager-deb
+          path: displaymanager_*_all.deb

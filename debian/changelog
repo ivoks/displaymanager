@@ -13,5 +13,6 @@ displaymanager (0.1.0) resolute; urgency=medium
       extension).
     - Brightness, contrast and volume sliders and commands.
     - GNOME on-screen pop-up for shortcut and screen-edge actions.
+    - Unit tests (make check) and GitHub Actions CI.
 
  -- Ante Karamatic <ivoks@ubuntu.com>  Thu, 19 Nov 2026 18:56:54 +0100

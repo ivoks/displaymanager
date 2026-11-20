@@ -2,7 +2,9 @@ Source: displaymanager
 Section: utils
 Priority: optional
 Maintainer: Ante Karamatic <ivoks@ubuntu.com>
-Build-Depends: debhelper-compat (= 13), dh-python, gettext, python3:any
+Build-Depends: debhelper-compat (= 13), dh-python, gettext, python3:any,
+               desktop-file-utils <!nocheck>,
+               python3-gi <!nocheck>
 Standards-Version: 4.7.2
 Rules-Requires-Root: no
 
