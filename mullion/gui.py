@@ -115,9 +115,7 @@ class Window(Adw.ApplicationWindow):
         g.add(self.edge_mode_row)
         self.pressure_row = Adw.ComboRow(
             title=_("Push Strength"),
-            subtitle=_("How firmly to push into the edge; pushes with a mouse "
-                       "button held, near the corners or right after the "
-                       "keyboard and mouse arrive are ignored"),
+            subtitle=_("How firmly to push into the edge"),
             model=Gtk.StringList.new([title for _p, title in PRESSURES]))
         values = [p for p, _title in PRESSURES]
         current = self.ctl.cfg.get("edge_pressure")

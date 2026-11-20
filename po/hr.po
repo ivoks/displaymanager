@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: mullion 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/ivoks/mullion/issues\n"
-"POT-Creation-Date: 2026-11-20 12:16+0100\n"
+"POT-Creation-Date: 2026-11-20 21:57+0100\n"
 "PO-Revision-Date: 2026-11-20 08:55+0100\n"
 "Last-Translator: Ante Karamatic <ante@dlivio.com>\n"
 "Language-Team: Croatian\n"
@@ -176,11 +176,11 @@ msgstr "Ovo računalo: {input} ({code}) [{reason}]"
 msgid "error: “{value}” is not a number, +N or -N"
 msgstr "greška: „{value}” nije broj, +N ni -N"
 
-#: mullion/cli.py:199 mullion/controller.py:518 mullion/gui.py:476
+#: mullion/cli.py:199 mullion/controller.py:518 mullion/gui.py:474
 msgid "Toggled keyboard and mouse"
 msgstr "Tipkovnica i miš su prebačeni"
 
-#: mullion/cli.py:206 mullion/gui.py:157
+#: mullion/cli.py:206 mullion/gui.py:155
 msgid "Swapped the inputs"
 msgstr "Ulazi su zamijenjeni"
 
@@ -197,7 +197,7 @@ msgstr "Prikaz jedan pored drugog je isključen"
 msgid "error: unknown layout “{name}”; try “layout list”"
 msgstr "greška: nepoznat raspored „{name}”; pokušajte „layout list”"
 
-#: mullion/cli.py:231 mullion/gui.py:561
+#: mullion/cli.py:231 mullion/gui.py:559
 #, python-brace-format
 msgid "Layout: {layout}"
 msgstr "Raspored: {layout}"
@@ -207,7 +207,7 @@ msgstr "Raspored: {layout}"
 msgid "Switched to {input}"
 msgstr "Prebačeno na {input}"
 
-#: mullion/cli.py:238 mullion/gui.py:589
+#: mullion/cli.py:238 mullion/gui.py:587
 #, python-brace-format
 msgid "Second input: {input}"
 msgstr "Drugi ulaz: {input}"
@@ -383,7 +383,7 @@ msgstr "Traženje monitora…"
 msgid "Switch"
 msgstr "Prebacivanje"
 
-#: mullion/gui.py:87 mullion/gui.py:460
+#: mullion/gui.py:87 mullion/gui.py:458
 msgid "Switch Computer"
 msgstr "Promijeni računalo"
 
@@ -391,7 +391,7 @@ msgstr "Promijeni računalo"
 msgid "Keyboard & Mouse"
 msgstr "Tipkovnica i miš"
 
-#: mullion/gui.py:96 mullion/gui.py:457
+#: mullion/gui.py:96 mullion/gui.py:455
 msgid "Hand the monitor’s USB hub to the other computer"
 msgstr "Predaj USB razdjelnik monitora drugom računalu"
 
@@ -420,82 +420,78 @@ msgid "Push Strength"
 msgstr "Jačina guranja"
 
 #: mullion/gui.py:118
-msgid ""
-"How firmly to push into the edge; pushes with a mouse button held, near the "
-"corners or right after the keyboard and mouse arrive are ignored"
-msgstr ""
-"Koliko snažno treba gurnuti u rub; guranje s pritisnutom tipkom miša, blizu "
-"kutova ili odmah nakon dolaska tipkovnice i miša se zanemaruje"
+msgid "How firmly to push into the edge"
+msgstr "Koliko snažno treba gurnuti u rub"
 
-#: mullion/gui.py:132
+#: mullion/gui.py:130
 msgid "Layout"
 msgstr "Raspored"
 
-#: mullion/gui.py:133
+#: mullion/gui.py:131
 msgid "How the screen is shared between the two inputs"
 msgstr "Kako se zaslon dijeli između dvaju ulaza"
 
-#: mullion/gui.py:153
+#: mullion/gui.py:151
 msgid "Swap Inputs"
 msgstr "Zamijeni ulaze"
 
-#: mullion/gui.py:155
+#: mullion/gui.py:153
 msgid "Swap"
 msgstr "Zamijeni"
 
-#: mullion/gui.py:161
+#: mullion/gui.py:159
 msgid "Second Input"
 msgstr "Drugi ulaz"
 
-#: mullion/gui.py:162
+#: mullion/gui.py:160
 msgid "Right side, or the inset"
 msgstr "Desna strana ili umetak"
 
-#: mullion/gui.py:170
+#: mullion/gui.py:168
 msgid "Picture & Sound"
 msgstr "Slika i zvuk"
 
-#: mullion/gui.py:194
+#: mullion/gui.py:192
 msgid "Computers"
 msgstr "Računala"
 
-#: mullion/gui.py:195
+#: mullion/gui.py:193
 msgid "Which monitor input each computer is plugged into"
 msgstr "Na koji je ulaz monitora priključeno koje računalo"
 
-#: mullion/gui.py:197
+#: mullion/gui.py:195
 msgid "This Computer"
 msgstr "Ovo računalo"
 
-#: mullion/gui.py:199
+#: mullion/gui.py:197
 msgid "Other Computer"
 msgstr "Drugo računalo"
 
-#: mullion/gui.py:201
+#: mullion/gui.py:199
 msgid "Show Full Screen"
 msgstr "Prikaži preko cijelog zaslona"
 
-#: mullion/gui.py:202
+#: mullion/gui.py:200
 msgid "Select the active input directly"
 msgstr "Izravno odaberi aktivni ulaz"
 
-#: mullion/gui.py:208
+#: mullion/gui.py:206
 msgid "Detect"
 msgstr "Otkrij"
 
-#: mullion/gui.py:209
+#: mullion/gui.py:207
 msgid "Work out which input this computer is plugged into"
 msgstr "Utvrdi na koji je ulaz priključeno ovo računalo"
 
-#: mullion/gui.py:213
+#: mullion/gui.py:211
 msgid "Other Computer Name"
 msgstr "Naziv drugog računala"
 
-#: mullion/gui.py:222
+#: mullion/gui.py:220
 msgid "General"
 msgstr "Općenito"
 
-#: mullion/gui.py:223
+#: mullion/gui.py:221
 msgid ""
 "System-wide GNOME shortcuts. Change the keys in Settings → Keyboard → Custom "
 "Shortcuts."
@@ -503,22 +499,22 @@ msgstr ""
 "GNOME prečaci za cijeli sustav. Tipke možete promijeniti u Postavke → "
 "Tipkovnica → Prilagođeni prečaci."
 
-#: mullion/gui.py:227
+#: mullion/gui.py:225
 msgid "Show On-Screen Pop-Up"
 msgstr "Prikaži skočni prozor na zaslonu"
 
-#: mullion/gui.py:228
+#: mullion/gui.py:226
 msgid ""
 "When a shortcut or the screen edge changes something; otherwise a "
 "notification is shown"
 msgstr ""
 "Kad prečac ili rub zaslona nešto promijeni; inače se prikazuje obavijest"
 
-#: mullion/gui.py:234
+#: mullion/gui.py:232
 msgid "Show in Quick Settings"
 msgstr "Prikaži u Brzim postavkama"
 
-#: mullion/gui.py:235
+#: mullion/gui.py:233
 msgid ""
 "A Monitor tile in GNOME’s Quick Settings to pick a layout, move the keyboard "
 "and mouse or swap inputs"
@@ -526,23 +522,23 @@ msgstr ""
 "Pločica Monitor u GNOME Brzim postavkama za odabir rasporeda, premještanje "
 "tipkovnice i miša ili zamjenu ulaza"
 
-#: mullion/gui.py:246
+#: mullion/gui.py:244
 msgid "Layouts"
 msgstr "Rasporedi"
 
-#: mullion/gui.py:247
+#: mullion/gui.py:245
 msgid "Jump straight to a screen layout"
 msgstr "Izravno prijeđi na raspored zaslona"
 
-#: mullion/gui.py:249
+#: mullion/gui.py:247
 msgid "Enable All"
 msgstr "Omogući sve"
 
-#: mullion/gui.py:262
+#: mullion/gui.py:260
 msgid "Raw VCP Access"
 msgstr "Izravan VCP pristup"
 
-#: mullion/gui.py:263
+#: mullion/gui.py:261
 msgid ""
 "Read or write any DDC/CI feature, e.g. to probe manufacturer-specific codes. "
 "Writing the wrong value can change monitor settings."
@@ -551,39 +547,39 @@ msgstr ""
 "specifičnih za proizvođača. Zapisivanje pogrešne vrijednosti može "
 "promijeniti postavke monitora."
 
-#: mullion/gui.py:266
+#: mullion/gui.py:264
 msgid "Feature code (hex, e.g. E7)"
 msgstr "Kod značajke (heksadecimalno, npr. E7)"
 
-#: mullion/gui.py:267
+#: mullion/gui.py:265
 msgid "Value (hex, for Set)"
 msgstr "Vrijednost (heksadecimalno, za Postavi)"
 
-#: mullion/gui.py:268
+#: mullion/gui.py:266
 msgid "Result"
 msgstr "Rezultat"
 
-#: mullion/gui.py:271
+#: mullion/gui.py:269
 msgid "Get"
 msgstr "Dohvati"
 
-#: mullion/gui.py:271
+#: mullion/gui.py:269
 msgid "Set"
 msgstr "Postavi"
 
-#: mullion/gui.py:289
+#: mullion/gui.py:287
 msgid "Full screen"
 msgstr "Cijeli zaslon"
 
-#: mullion/gui.py:290
+#: mullion/gui.py:288
 msgid "Picture in picture"
 msgstr "Slika u slici"
 
-#: mullion/gui.py:366
+#: mullion/gui.py:364
 msgid "Done"
 msgstr "Gotovo"
 
-#: mullion/gui.py:374
+#: mullion/gui.py:372
 msgid ""
 "No access to the monitor’s I2C bus. Run “sudo usermod -aG i2c $USER”, then "
 "log out and back in."
@@ -591,108 +587,108 @@ msgstr ""
 "Nema pristupa I2C sabirnici monitora. Pokrenite „sudo usermod -aG i2c "
 "$USER”, zatim se odjavite i ponovno prijavite."
 
-#: mullion/gui.py:392
+#: mullion/gui.py:390
 msgid "Monitor not reachable"
 msgstr "Monitor nije dostupan"
 
-#: mullion/gui.py:414
+#: mullion/gui.py:412
 msgid "Not set"
 msgstr "Nije postavljeno"
 
-#: mullion/gui.py:441
+#: mullion/gui.py:439
 #, python-brace-format
 msgid "Serial {serial}"
 msgstr "Serijski broj {serial}"
 
-#: mullion/gui.py:444
+#: mullion/gui.py:442
 #, python-brace-format
 msgid "Showing {input}"
 msgstr "Prikazuje {input}"
 
-#: mullion/gui.py:450
+#: mullion/gui.py:448
 #, python-brace-format
 msgid "second: {input}"
 msgstr "drugi: {input}"
 
-#: mullion/gui.py:455
+#: mullion/gui.py:453
 msgid "Connected to this computer"
 msgstr "Priključeno na ovo računalo"
 
-#: mullion/gui.py:456
+#: mullion/gui.py:454
 msgid "Connected to the other computer"
 msgstr "Priključeno na drugo računalo"
 
-#: mullion/gui.py:459
+#: mullion/gui.py:457
 msgid "Move Keyboard & Mouse"
 msgstr "Premjesti tipkovnicu i miš"
 
-#: mullion/gui.py:514
+#: mullion/gui.py:512
 msgid "Log out and back in once to finish setting up edge switching"
 msgstr ""
 "Odjavite se i ponovno prijavite kako biste dovršili postavljanje "
 "prebacivanja na rubu"
 
-#: mullion/gui.py:517
+#: mullion/gui.py:515
 msgid "GNOME Shell couldn’t enable the edge-switch extension"
 msgstr "GNOME Shell nije mogao omogućiti proširenje za prebacivanje na rubu"
 
-#: mullion/gui.py:579
+#: mullion/gui.py:577
 #, python-brace-format
 msgid "Switching to {input}"
 msgstr "Prebacivanje na {input}"
 
-#: mullion/gui.py:596
+#: mullion/gui.py:594
 #, python-brace-format
 msgid "Couldn’t tell which input this is ({reason}); choose it from the list"
 msgstr ""
 "Nije moguće utvrditi o kojem se ulazu radi ({reason}); odaberite ga s popisa"
 
-#: mullion/gui.py:600
+#: mullion/gui.py:598
 #, python-brace-format
 msgid "Detected input {code} is not in the list"
 msgstr "Otkriveni ulaz {code} nije na popisu"
 
-#: mullion/gui.py:608
+#: mullion/gui.py:606
 #, python-brace-format
 msgid "This computer: {input}"
 msgstr "Ovo računalo: {input}"
 
-#: mullion/gui.py:615
+#: mullion/gui.py:613
 msgid "Pick the other computer’s input first"
 msgstr "Najprije odaberite ulaz drugog računala"
 
-#: mullion/gui.py:639
+#: mullion/gui.py:637
 msgid "(also on the number pad)"
 msgstr "(i na numeričkoj tipkovnici)"
 
-#: mullion/gui.py:642
+#: mullion/gui.py:640
 #, python-brace-format
 msgid "already used by {users}"
 msgstr "već koristi: {users}"
 
-#: mullion/gui.py:654
+#: mullion/gui.py:652
 #, python-brace-format
 msgid "Couldn’t enable: {shortcuts}"
 msgstr "Nije moguće omogućiti: {shortcuts}"
 
-#: mullion/gui.py:656
+#: mullion/gui.py:654
 msgid "Layout shortcuts enabled"
 msgstr "Prečaci za rasporede su omogućeni"
 
-#: mullion/gui.py:675
+#: mullion/gui.py:673
 msgid "Enter a feature code in hex"
 msgstr "Unesite heksadecimalni kod značajke"
 
-#: mullion/gui.py:685
+#: mullion/gui.py:683
 #, python-brace-format
 msgid "VCP {code}: value {value}, raw {raw}"
 msgstr "VCP {code}: vrijednost {value}, sirovo {raw}"
 
-#: mullion/gui.py:699
+#: mullion/gui.py:697
 msgid "Enter a value in hex"
 msgstr "Unesite heksadecimalnu vrijednost"
 
-#: mullion/gui.py:702
+#: mullion/gui.py:700
 #, python-brace-format
 msgid "Wrote {value} to VCP {code}"
 msgstr "Zapisano {value} u VCP {code}"
